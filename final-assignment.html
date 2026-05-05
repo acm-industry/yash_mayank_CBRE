@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Final Project — Turing x UCSB x ACM</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:     #1a1a2e;
+      --mid:     #4a4a6a;
+      --light:   #8888aa;
+      --rule:    #e2e2ec;
+      --accent:  #4f46e5;
+      --accent2: #7c3aed;
+      --bg:      #fafafa;
+      --white:   #ffffff;
+      --ok:      #16a34a;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.65;
+      font-size: 14px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      max-width: 820px;
+      margin: 40px auto;
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #161b27 50%, #0f2444 100%);
+      padding: 52px 56px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 340px; height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79,70,229,.2) 0%, transparent 70%);
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -50px; left: 25%;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(15,100,180,.2) 0%, transparent 70%);
+    }
+
+    .hero-org {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.45);
+      margin-bottom: 16px;
+    }
+    .hero-org span { color: rgba(255,255,255,.8); }
+    .hero-org .sep { margin: 0 8px; opacity: .35; }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -.025em;
+      line-height: 1.08;
+      margin-bottom: 8px;
+    }
+    .hero-subtitle {
+      font-size: 15px;
+      font-weight: 400;
+      color: rgba(255,255,255,.45);
+      letter-spacing: .04em;
+    }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 28px;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.75);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 100px;
+    }
+    .hero-badge.hi {
+      background: rgba(79,70,229,.28);
+      border-color: rgba(79,70,229,.5);
+      color: rgba(255,255,255,.9);
+    }
+
+    /* ── Body ── */
+    .body { padding: 48px 56px; }
+
+    section { margin-bottom: 44px; }
+    section:last-child { margin-bottom: 0; }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1.5px solid var(--rule);
+      letter-spacing: -.01em;
+    }
+
+    p { color: var(--mid); margin-bottom: 10px; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Pipeline diagram ── */
+    .pipeline-flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 20px 0 8px;
+    }
+    .pf-node {
+      background: var(--bg);
+      border: 1.5px solid var(--rule);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mid);
+      white-space: nowrap;
+    }
+    .pf-node.hitl {
+      border-color: rgba(79,70,229,.4);
+      color: var(--accent);
+      background: rgba(79,70,229,.05);
+    }
+    .pf-arrow {
+      font-size: 13px;
+      color: var(--light);
+      padding: 0 6px;
+      font-weight: 400;
+    }
+
+    /* ── HITL patterns ── */
+    .patterns-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .pattern-card {
+      border: 1.5px solid var(--rule);
+      border-radius: 10px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .pattern-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .pc-validator::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+    .pc-override::before  { background: linear-gradient(90deg, #0891b2, #06b6d4); }
+    .pc-trainer::before   { background: linear-gradient(90deg, #059669, #10b981); }
+
+    .pattern-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .pc-validator .pattern-label { color: #d97706; }
+    .pc-override  .pattern-label { color: #0891b2; }
+    .pc-trainer   .pattern-label { color: #059669; }
+
+    .pattern-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .pattern-desc {
+      font-size: 12.5px;
+      color: var(--mid);
+      line-height: 1.5;
+    }
+    .pattern-api {
+      margin-top: 8px;
+      font-size: 11.5px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--light);
+    }
+
+    /* ── Milestone timeline ── */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 30px;
+      top: 20px;
+      bottom: 20px;
+      width: 1.5px;
+      background: var(--rule);
+    }
+
+    .ms-row {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      padding: 0 0 28px 0;
+      position: relative;
+    }
+    .ms-row:last-child { padding-bottom: 0; }
+
+    .ms-week {
+      flex-shrink: 0;
+      width: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding-top: 2px;
+      position: relative;
+      z-index: 1;
+    }
+    .ms-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid;
+      background: var(--white);
+      flex-shrink: 0;
+    }
+    .ms-week-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--light);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .ms-card {
+      flex: 1;
+      border: 1.5px solid var(--rule);
+      border-radius: 10px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .ms-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .w8 .ms-dot  { border-color: #4f46e5; }
+    .w8 .ms-card::before { background: linear-gradient(90deg, #4f46e5, #7c3aed); }
+
+    .w9 .ms-dot  { border-color: #0891b2; }
+    .w9 .ms-card::before { background: linear-gradient(90deg, #0891b2, #06b6d4); }
+
+    .w10 .ms-dot  { border-color: #059669; }
+    .w10 .ms-card::before { background: linear-gradient(90deg, #059669, #10b981); }
+
+    .w11 .ms-dot { border-color: #d97706; }
+    .w11 .ms-card::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+
+    .ms-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+    .ms-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -.01em;
+    }
+    .ms-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 100px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .tag-checkin { background: rgba(79,70,229,.08); color: var(--accent); border: 1px solid rgba(79,70,229,.2); }
+    .tag-final   { background: rgba(217,119,6,.1);  color: #92400e;       border: 1px solid rgba(217,119,6,.3); }
+
+    .ms-items {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 16px;
+    }
+    .ms-items.single { grid-template-columns: 1fr; }
+    .ms-items li {
+      font-size: 12.5px;
+      color: var(--mid);
+      padding-left: 14px;
+      position: relative;
+    }
+    .ms-items li::before {
+      content: '–';
+      position: absolute;
+      left: 0;
+      color: var(--light);
+    }
+
+    /* ── Data cards ── */
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .data-card {
+      background: var(--bg);
+      border: 1.5px solid var(--rule);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .data-card-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--light);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 4px;
+    }
+    .data-card-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -.02em;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .data-card-sub { font-size: 12px; color: var(--light); margin-top: 2px; }
+
+    /* ── File manifest ── */
+    .file-list {
+      margin-top: 6px;
+      border: 1.5px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--white);
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: 200px 86px 1fr;
+      gap: 18px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--rule);
+      align-items: center;
+    }
+    .file-row:last-child { border-bottom: none; }
+    .file-row:nth-child(even) { background: var(--bg); }
+    .file-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ink);
+      word-break: break-all;
+    }
+    .file-stat {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: right;
+      white-space: nowrap;
+      letter-spacing: -.01em;
+    }
+    .file-stat-unit {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--light);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 1px;
+    }
+    .file-desc {
+      font-size: 12.5px;
+      color: var(--mid);
+      line-height: 1.55;
+    }
+    .file-desc strong { color: var(--ink); font-weight: 600; }
+
+    .data-lead {
+      font-size: 12.5px;
+      color: var(--mid);
+      margin-top: 6px;
+      padding: 10px 14px;
+      background: rgba(79,70,229,.05);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+    }
+    .data-lead strong { color: var(--ink); }
+
+    .schema-ref {
+      margin-top: 14px;
+      border: 1px dashed var(--rule);
+      border-radius: 10px;
+      padding: 0;
+    }
+    .schema-ref summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .schema-ref summary::-webkit-details-marker { display: none; }
+    .schema-ref summary::after {
+      content: '+';
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--light);
+    }
+    .schema-ref[open] summary::after { content: '−'; }
+    .schema-body {
+      padding: 0 16px 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .schema-block {
+      font-size: 12px;
+      color: var(--mid);
+      line-height: 1.6;
+    }
+    .schema-block-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .schema-block code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      background: var(--bg);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--ink);
+    }
+
+    /* ── Topic grid ── */
+    .topic-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .topic-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1.5px solid var(--rule);
+      font-size: 13px;
+      color: var(--mid);
+    }
+    .topic-bullet {
+      flex-shrink: 0;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: 7px;
+      opacity: .6;
+    }
+
+    /* ── Acceptance table ── */
+    .ac-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 13px;
+    }
+    .ac-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--light);
+      padding: 8px 12px;
+      border-bottom: 1.5px solid var(--rule);
+    }
+    .ac-table td {
+      padding: 10px 12px;
+      color: var(--mid);
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    .ac-table tr:last-child td { border-bottom: none; }
+    .ac-table tr:nth-child(even) td { background: var(--bg); }
+
+    .status-tbd {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      color: #92400e;
+      background: rgba(254,243,199,.8);
+      border: 1px solid rgba(234,179,8,.4);
+      border-radius: 4px;
+      padding: 1px 7px;
+    }
+    .status-req {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      color: var(--ok);
+      background: rgba(22,163,74,.08);
+      border: 1px solid rgba(22,163,74,.3);
+      border-radius: 4px;
+      padding: 1px 7px;
+    }
+
+    /* ── Hints section ── */
+    .hints-section {
+      border: 1.5px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    details { }
+    details summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mid);
+      background: var(--bg);
+      list-style: none;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::after {
+      content: '+';
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--light);
+    }
+    details[open] summary::after { content: '–'; }
+    details[open] summary {
+      border-bottom: 1.5px solid var(--rule);
+    }
+
+    .hints-body {
+      padding: 20px 20px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 28px;
+    }
+
+    .hint-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--light);
+      margin-bottom: 8px;
+    }
+
+    .pkg-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .pkg-list li {
+      font-size: 12.5px;
+      color: var(--mid);
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .pkg-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .pkg-note {
+      font-size: 11.5px;
+      color: var(--light);
+    }
+    .pkg-req {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(79,70,229,.08);
+      border: 1px solid rgba(79,70,229,.2);
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    .hint-note {
+      grid-column: 1 / -1;
+      padding: 12px 14px;
+      background: rgba(79,70,229,.04);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      color: var(--mid);
+    }
+    .hint-note strong { color: var(--ink); }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1.5px solid var(--rule);
+      padding: 20px 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-left  { font-size: 12px; color: var(--light); }
+    .footer-right { font-size: 12px; color: var(--light); font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; font-size: 12px; }
+      .page { margin: 0; border: none; border-radius: 0; box-shadow: none; max-width: 100%; }
+      .hero { padding: 36px 40px 32px; }
+      .body { padding: 32px 40px; }
+      .footer { padding: 16px 40px; }
+      section { break-inside: avoid; }
+      .ms-row { break-inside: avoid; }
+      details { display: block; }
+      details summary::after { content: ''; }
+      .hints-body { display: grid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-org">
+      <span>Turing</span><span class="sep">×</span>
+      <span>UCSB</span><span class="sep">×</span>
+      <span>ACM</span>
+    </div>
+    <div class="hero-title">Final Project</div>
+    <div class="hero-subtitle">April 2026</div>
+    <div class="hero-badges">
+      <span class="hero-badge hi">Call Center Automation</span>
+      <span class="hero-badge">Commercial Property Management</span>
+      <span class="hero-badge">AI · HITL · Voice</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Overview -->
+    <section>
+      <div class="section-label">Overview</div>
+      <h2>Project Summary</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <span style="font-size:11px;font-weight:600;color:var(--mid);background:var(--bg);border:1.5px solid var(--rule);border-radius:100px;padding:4px 12px;">1–2 people per team</span>
+      </div>
+      <p>
+        Design and build an AI-powered call center intake platform for an international commercial
+        property management firm. Tenants, vendors, and facility managers call in to report
+        maintenance issues, safety incidents, and service requests across a large portfolio of
+        office, medical, industrial, and mixed-use properties.
+      </p>
+      <p>
+        The system must turn unstructured voice conversations into structured work orders,
+        classify each call into a <strong>hierarchical taxonomy</strong> (10 top-level categories,
+        36 subcategories), assign one of four
+        <strong>risk levels</strong> (<code style="font-family:monospace;font-size:12.5px">LOW · MEDIUM · HIGH · EMERGENCY</code>),
+        and route accordingly. How you compute that risk — score-then-threshold, LLM-judged, rule-based,
+        something else — is a design decision you'll defend. High-risk calls pause for a human reviewer before any action is
+        taken; emergencies trigger immediate dispatch with asynchronous notification.
+      </p>
+      <p>
+        Beyond the happy path, the platform must handle inarticulate callers, missing information,
+        the need to ask clarifying questions, and situations where the historical record conflicts
+        with what the caller describes. It is evaluated against
+        <strong>1,000 multi-turn transcripts</strong> (split into a 200-row labeled dev set for iteration
+        and an 800-row unlabeled test set we use for final grading — exactly like a real benchmark) and a knowledge base of
+        <strong>10,000 historical incident records</strong> that your RAG agent retrieves from. The
+        benchmark's case mix is deliberately opaque: expect a realistic spread of routine calls, ambiguous
+        descriptions, calls that need a clarifying question, dead-end unroutable edges, and hazard
+        scenarios designed to tempt an over-reaction. You don't have to <em>run</em> at 10,000 calls/day —
+        but you do have to <em>reason</em> about how your design would hold up there.
+      </p>
+    </section>
+
+    <!-- HITL Pipeline -->
+    <section>
+      <div class="section-label">Core Concepts</div>
+      <h2>The HITL Pipeline</h2>
+      <p>
+        The intake pipeline flows through five stages. The validator gate in stage 4 is where the
+        human-in-the-loop logic lives — the pipeline pauses there when the call is too risky to
+        auto-route.
+      </p>
+
+      <div class="pipeline-flow">
+        <div class="pf-node">1. Extract</div>
+        <div class="pf-arrow">&#8594;</div>
+        <div class="pf-node">2. Retrieve</div>
+        <div class="pf-arrow">&#8594;</div>
+        <div class="pf-node">3. Classify</div>
+        <div class="pf-arrow">&#8594;</div>
+        <div class="pf-node hitl">4. Validator Gate</div>
+        <div class="pf-arrow">&#8594;</div>
+        <div class="pf-node">5. Log &amp; Route</div>
+      </div>
+
+      <p style="font-size:12.5px; margin-top:6px;">
+        Stage 4 evaluates each call against <strong>risk</strong>, not confidence
+        alone. Low confidence is not the same as high risk —
+        <strong>Risk = P(error) &times; Cost(error)</strong>.
+        A confident classification on a high-severity call may still warrant human review because
+        the cost of a wrong routing decision is catastrophic. A low-confidence classification on a
+        minor issue may not, because the cost of error is negligible. The trigger
+        threshold should reflect both dimensions.
+      </p>
+
+      <!-- Risk bands (conceptual — thresholds + HITL policy are yours to derive) -->
+      <div style="margin-top:14px; border:1.5px solid var(--rule); border-radius:10px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+          <thead>
+            <tr style="background:var(--bg);">
+              <th style="text-align:left; padding:8px 14px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--light);">Risk Band</th>
+              <th style="text-align:left; padding:8px 14px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--light);">What it roughly represents</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:8px 14px; color:#16a34a; font-weight:600;">LOW</td>
+              <td style="padding:8px 14px; color:var(--mid);">Routine issue; low cost-of-error; safe to resolve autonomously.</td>
+            </tr>
+            <tr style="background:var(--bg);">
+              <td style="padding:8px 14px; color:#ca8a04; font-weight:600;">MEDIUM</td>
+              <td style="padding:8px 14px; color:var(--mid);">Standard maintenance; still low risk but worth notifying the property manager.</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 14px; color:var(--accent); font-weight:600;">HIGH</td>
+              <td style="padding:8px 14px; color:var(--mid);">Significant cost-of-error; a human should probably sign off before you act.</td>
+            </tr>
+            <tr style="background:var(--bg);">
+              <td style="padding:8px 14px; color:#dc2626; font-weight:600;">EMERGENCY</td>
+              <td style="padding:8px 14px; color:var(--mid);">Life safety or major property risk; dispatch cannot wait on review.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size:12.5px; margin-top:10px;">
+        <strong>You decide</strong> the numeric thresholds that separate these bands and the exact policy
+        for when the validator gate pauses vs. dispatches immediately. Derive both from the provided
+        data — look at <code style="font-family:monospace;font-size:12px">intake_risk_level</code> vs.
+        <code style="font-family:monospace;font-size:12px">final_risk_level</code> drift in
+        <code style="font-family:monospace;font-size:12px">operational/historical_records.json</code>,
+        the <code style="font-family:monospace;font-size:12px">was_reclassified</code> /
+        <code style="font-family:monospace;font-size:12px">was_over_escalated</code> patterns in
+        <code style="font-family:monospace;font-size:12px">evaluation/qa_audit_findings.json</code>,
+        and response-time / cost distributions per subcategory. Justify your choices in the design
+        document. The grader checks band labels and downstream actions; it does not care what numeric
+        cutoffs you used to get there.
+      </p>
+
+      <div style="margin-top: 20px;">
+        <div class="patterns-grid">
+          <div class="pattern-card pc-validator">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div class="pattern-label" style="margin-bottom:0;">Pattern 1</div>
+              <span class="status-req" style="font-size:10px;">Required</span>
+            </div>
+            <div class="pattern-title">Validator</div>
+            <div class="pattern-desc">
+              Pauses before any action based on risk, not confidence alone.
+              Trigger = P(error) &times; Cost(error). Design your threshold accordingly.
+            </div>
+            <div class="pattern-api">interrupt()</div>
+          </div>
+          <div class="pattern-card pc-override">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div class="pattern-label" style="margin-bottom:0;">Pattern 2</div>
+              <span class="status-req" style="font-size:10px;">Required</span>
+            </div>
+            <div class="pattern-title">Override</div>
+            <div class="pattern-desc">
+              Corrects the AI's classification — either at the interrupt point
+              or post-execution against a call that already completed.
+            </div>
+            <div class="pattern-api">Command(resume=...) · update_state()</div>
+          </div>
+          <div class="pattern-card pc-trainer">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div class="pattern-label" style="margin-bottom:0;">Pattern 3</div>
+              <span class="status-req" style="font-size:10px;">Required</span>
+            </div>
+            <div class="pattern-title">Trainer</div>
+            <div class="pattern-desc">
+              Logs every decision with the original AI prediction alongside
+              any human correction. Feeds prompt tuning and fine-tuning.
+            </div>
+            <div class="pattern-api">log_result node · trainer_log</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Milestones -->
+    <section>
+      <div class="section-label">Schedule — Weeks 8 – 11</div>
+      <h2>Project Milestones</h2>
+
+      <div class="timeline">
+
+        <!-- Week 8 -->
+        <div class="ms-row w8">
+          <div class="ms-week">
+            <div class="ms-dot"></div>
+            <div class="ms-week-label">Week<br>8</div>
+          </div>
+          <div class="ms-card">
+            <div class="ms-header">
+              <div class="ms-title">Core Pipeline</div>
+              <span class="ms-tag tag-checkin">Check-in</span>
+            </div>
+            <ul class="ms-items single">
+              <li>Provided under <code>operational/</code>: taxonomy.md (the intake SOP — labels only, no numeric policy), caller_profiles.json (250), buildings.json (52), vendors.json (32), historical_records.json (10K). Under <code>evaluation/</code>: eval_transcripts_dev.json (200, labeled via dev_labels.json), eval_transcripts_test.json (800, unlabeled — final grading set), qa_audit_findings.json (~990)</li>
+              <li>End-to-end pipeline: extract structured fields (or use caller profile), retrieve from the 10K historical knowledge base (live RAG per call), classify into hierarchical category, pick a vendor from the dispatch pool</li>
+              <li>Assign a risk level (derive your own method) + route ticket; record baseline accuracy and latency</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Week 9 -->
+        <div class="ms-row w9">
+          <div class="ms-week">
+            <div class="ms-dot"></div>
+            <div class="ms-week-label">Week<br>9</div>
+          </div>
+          <div class="ms-card">
+            <div class="ms-header">
+              <div class="ms-title">HITL Controls &amp; Reviewer Interface</div>
+              <span class="ms-tag tag-checkin">Check-in</span>
+            </div>
+            <ul class="ms-items single">
+              <li>Full dataset available: operational/ (historical_records 10K + taxonomy.md + caller_profiles 250 + buildings 52 + vendors 32) and evaluation/ (eval_transcripts_dev 200 labeled + eval_transcripts_test 800 unlabeled + qa_audit_findings ~990)</li>
+              <li>Validator gate — trigger on your derived risk-level rule (whatever routing policy you design and justify)</li>
+              <li>Approve / override paths; clarification-question flow for ambiguous calls; trainer log</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Week 10 -->
+        <div class="ms-row w10">
+          <div class="ms-week">
+            <div class="ms-dot"></div>
+            <div class="ms-week-label">Week<br>10</div>
+          </div>
+          <div class="ms-card">
+            <div class="ms-header">
+              <div class="ms-title">Evaluation, Hardening &amp; Scale Design</div>
+              <span class="ms-tag tag-checkin">Check-in</span>
+            </div>
+            <ul class="ms-items single">
+              <li>Full eval on all 1K transcripts via <code style="font-family:monospace;font-size:12px">scoring.py</code> — per-axis metrics, diagnostics, and latency</li>
+              <li>Contradictory historical data — conflict detection and resolution policy for the noisy minority of records (on-site reclassifications, intake over-escalations, and floor corrections discovered on arrival; mine <code style="font-family:monospace;font-size:12px">qa_audit_findings.json</code> for the exact field names and prevalence)</li>
+              <li>Design document with a <strong>derived-policy appendix</strong> (base-risk table, risk-modifier weights, band cutoffs, SOP map, subcategory→vendor-type map, HITL trigger rule — all justified from history or reasoning), HITL placement, reviewer UX, and a thought-experiment on how the design would scale to 10K calls/day (no implementation required)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Week 11 -->
+        <div class="ms-row w11">
+          <div class="ms-week">
+            <div class="ms-dot"></div>
+            <div class="ms-week-label">Week<br>11</div>
+          </div>
+          <div class="ms-card">
+            <div class="ms-header">
+              <div class="ms-title">Final Presentation</div>
+              <span class="ms-tag tag-final">Presentation</span>
+            </div>
+            <ul class="ms-items single">
+              <li>Live demo: full pipeline with HITL flow visible — interrupt, review, approve or override</li>
+              <li>Address all key talk points with supporting metrics and evidence</li>
+              <li>Scale reasoning: how the design <em>would</em> hold up at 10K calls/day (discussion, not a load test)</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Data -->
+    <section>
+      <div class="section-label">Provided Resources</div>
+      <h2>Data You Receive</h2>
+
+      <p class="data-lead">
+        <strong>The project ships as two folders: <code style="font-family:monospace;font-size:12px">operational/</code> and <code style="font-family:monospace;font-size:12px">evaluation/</code>.</strong>
+        <em>Operational</em> is CBRE's live-ops data — the CMMS export, building registry, vendor roster, caller profiles,
+        and the intake SOP. <em>Evaluation</em> is your benchmark — dev transcripts with labels, unlabeled test transcripts,
+        and the scorer. See <code style="font-family:monospace;font-size:12px">assignment_brief.md</code> at the repo root for a concise task framing.
+      </p>
+
+      <h3 style="margin-top:18px;font-size:16px;color:var(--dark);">operational/ — the live CBRE ops data</h3>
+      <div class="file-list">
+        <div class="file-row">
+          <div class="file-name">historical_records.json</div>
+          <div class="file-stat">10,000<span class="file-stat-unit">records</span></div>
+          <div class="file-desc">
+            Three years of CMMS tickets — your agent's <strong>RAG knowledge base</strong>.
+            Schema mirrors what a human-run call center actually produces: shorthand
+            <code style="font-family:monospace;font-size:12px">intake_notes</code>,
+            dispatch-tech <code style="font-family:monospace;font-size:12px">dispatch_notes</code>,
+            <code style="font-family:monospace;font-size:12px">resolution_notes</code>, timestamps, operator IDs,
+            and the full <code style="font-family:monospace;font-size:12px">call_recording_transcript</code> (verbatim caller quote).
+            There's <em>no</em> summary field, no normalized 0-100 risk score, no
+            audit-style flags — those live in the separate
+            <code style="font-family:monospace;font-size:12px">qa_audit_findings.json</code> review file.
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">taxonomy.md</div>
+          <div class="file-stat">10 / 36<span class="file-stat-unit">cats / subs</span></div>
+          <div class="file-desc">
+            CBRE's intake <strong>SOP</strong> (internal operations voice — published to operators).
+            Defines the label space (categories, subcategories, risk-level names) and describes what kinds of calls
+            fall where. It <strong>deliberately omits</strong> numeric cutoffs, SOP-action mappings, vendor-type
+            mappings, and HITL policy — those are yours to design. Derive them from the 10K historical records
+            (observed intake-vs-final labels, vendor assignments, audit findings) and justify your choices in the
+            design document.
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">caller_profiles.json</div>
+          <div class="file-stat">250<span class="file-stat-unit">profiles</span></div>
+          <div class="file-desc">
+            CRM-style contact records — join key is
+            <code style="font-family:monospace;font-size:12px">phone_number</code>.
+            Each entry carries <code style="font-family:monospace;font-size:12px">caller_name</code>,
+            <code style="font-family:monospace;font-size:12px">email</code>,
+            <code style="font-family:monospace;font-size:12px">tenant_company</code> + <code style="font-family:monospace;font-size:12px">tenant_id</code>,
+            <code style="font-family:monospace;font-size:12px">contact_role</code>,
+            <code style="font-family:monospace;font-size:12px">preferred_language</code>,
+            <code style="font-family:monospace;font-size:12px">active</code>,
+            <code style="font-family:monospace;font-size:12px">last_verified_at</code>, and a
+            <code style="font-family:monospace;font-size:12px">primary_*</code> block with a <code>primary_building_id</code> FK.
+            These are <strong>last-known defaults, not live location</strong> — ~10% of profiles are stale (inactive,
+            or the tenant moved). Treat as prior, not source of truth.
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">buildings.json</div>
+          <div class="file-stat">52<span class="file-stat-unit">properties</span></div>
+          <div class="file-desc">
+            The property registry — name, address, city,
+            <code style="font-family:monospace;font-size:12px">building_type</code>, and
+            <code style="font-family:monospace;font-size:12px">special_floors</code>, plus
+            infrastructure hints where known:
+            <code style="font-family:monospace;font-size:12px">floor_count</code>,
+            <code style="font-family:monospace;font-size:12px">has_basement</code>,
+            <code style="font-family:monospace;font-size:12px">has_rooftop</code>,
+            <code style="font-family:monospace;font-size:12px">suites_per_floor</code>.
+            Those infra fields are <strong>intentionally sparse</strong> — real CMMS records
+            often have missing data for warehouses, retail, and older buildings. When
+            <code style="font-family:monospace;font-size:12px">floor_count</code> is present it lets you sanity-check
+            caller claims (a caller saying "Floor 10" in a 5-floor building is probably confused);
+            when it's missing your agent has to handle that gracefully.
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">vendors.json</div>
+          <div class="file-stat">32<span class="file-stat-unit">vendors</span></div>
+          <div class="file-desc">
+            The dispatch pool. Each entry has a <code style="font-family:monospace;font-size:12px">vendor_type</code>,
+            specialties, <code style="font-family:monospace;font-size:12px">coverage_cities</code>,
+            <code style="font-family:monospace;font-size:12px">building_types_certified</code>, SLAs, 24/7 flag,
+            cost tier, rating, and a cached availability snapshot —
+            <code style="font-family:monospace;font-size:12px">status_at_last_check</code>
+            (<em>available</em> / <em>at_capacity</em> / <em>offline</em>) with
+            <code style="font-family:monospace;font-size:12px">last_status_confirmed_at</code>. The cache can be hours
+            or days old; how much you trust it is your call.
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:22px;font-size:16px;color:var(--dark);">evaluation/ — your benchmark</h3>
+      <div class="file-list">
+        <div class="file-row">
+          <div class="file-name">eval_transcripts_dev.json<br>+ dev_labels.json</div>
+          <div class="file-stat">200<span class="file-stat-unit">labeled</span></div>
+          <div class="file-desc">
+            <strong>Dev set</strong> — stratified slice with full labels visible. Use for iteration and
+            error analysis; run <code style="font-family:monospace;font-size:12px">scoring.py</code> against it
+            as often as you want. Case mix is the same as test.
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">eval_transcripts_test.json</div>
+          <div class="file-stat">800<span class="file-stat-unit">unlabeled</span></div>
+          <div class="file-desc">
+            <strong>Final grading set</strong> — transcripts only, no labels. You run
+            <code style="font-family:monospace;font-size:12px">run_eval.py</code> against this file and submit the
+            resulting <code>predictions.json</code>. We score it against a held-out answer key using the same
+            <code style="font-family:monospace;font-size:12px">scoring.py</code> you used on dev.
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">qa_audit_findings.json</div>
+          <div class="file-stat">~990<span class="file-stat-unit">entries</span></div>
+          <div class="file-desc">
+            Post-hoc QA audits over the historical corpus. Each entry references a
+            <code style="font-family:monospace;font-size:12px">ticket_id</code> in the CMMS and records whether the
+            intake was over-escalated, reclassified on-site, or had the wrong floor logged — plus a QA note.
+            Use this to infer which past calls a human should have caught before dispatch (prior for your HITL policy).
+          </div>
+        </div>
+        <div class="file-row">
+          <div class="file-name">scoring.py + run_eval.py<br>+ prediction.py</div>
+          <div class="file-stat">—<span class="file-stat-unit">harness</span></div>
+          <div class="file-desc">
+            The exact code we use to grade you. <code>run_eval.py</code> imports your
+            <code style="font-family:monospace;font-size:12px">classify()</code>, loops over the transcript file, writes
+            <code>predictions.json</code>. <code>scoring.py</code> reads predictions + labels and prints the breakdown.
+            <code>prediction.py</code> ships the <code>Prediction</code> / <code>TrainerLog</code> dataclass you return.
+          </div>
+        </div>
+      </div>
+
+      <details class="schema-ref">
+        <summary>Field-level schema reference</summary>
+        <div class="schema-body">
+          <div class="schema-block">
+            <div class="schema-block-title">eval_transcripts_{dev,test}.json  <span style="color:var(--light);font-weight:400">(no labels in transcripts file)</span></div>
+            <code>transcript_id</code>,
+            <code>caller_phone</code>,
+            <code>caller_known_in_profiles</code>,
+            <code>turns</code> (list of <code>{speaker, text}</code> — flatten however you like).
+          </div>
+          <div class="schema-block">
+            <div class="schema-block-title">dev_labels.json</div>
+            Keyed by <code>transcript_id</code>:
+            <code>case_type</code>,
+            <code>true_category</code>, <code>true_subcategory</code>, <code>true_risk_level</code>,
+            <code>true_needs_human_review</code>, <code>true_needs_clarification</code>,
+            <code>ground_truth_building_name / address / floor / city</code>,
+            <code>acceptable_vendor_ids</code>, <code>vendor_constraints</code>,
+            <code>is_over_escalation_trap</code>, <code>penalty_if_911_dispatched</code>,
+            <code>should_auto_resolve</code>, <code>unroutable</code>.
+          </div>
+          <div class="schema-block">
+            <div class="schema-block-title">Required <code>classify()</code> output / predictions.json row</div>
+            See <code>evaluation/prediction.py</code> (<code>Prediction</code> + <code>TrainerLog</code> dataclass).
+            Keys: <code>transcript_id</code>, <code>category</code>, <code>subcategory</code>, <code>risk_level</code>,
+            <code>needs_human_review</code>, <code>needs_clarification</code>,
+            <code>building_name</code>, <code>address</code>, <code>floor</code>,
+            <code>dispatched_vendor_id</code>,
+            <code>dispatched_emergency_services</code> (<em>only</em> true when you're truly calling 911),
+            <code>call_summary</code> (2–3 sentence operator-style narrative),
+            <code>trainer_log</code> (<code>{full_transcript, ai_prediction, human_override, final_decision}</code>).
+          </div>
+          <div class="schema-block">
+            <div class="schema-block-title">historical_records.json  <span style="color:var(--light);font-weight:400">(CMMS export — live ops schema)</span></div>
+            <code>ticket_id</code>,
+            <code>call_received_at</code>, <code>triaged_at</code>, <code>vendor_notified_at</code>, <code>on_site_at</code>, <code>resolved_at</code>,
+            <code>triage_operator_id</code>, <code>dispatch_operator_id</code>,
+            <code>caller_phone</code>, <code>caller_name</code>,
+            <code>building_id</code>, <code>building_name</code>, <code>address</code>, <code>city</code>, <code>building_type</code>,
+            <code>floor</code>, <code>suite</code>,
+            <code>call_recording_transcript</code>,
+            <code>intake_category</code>, <code>intake_subcategory</code>, <code>intake_risk_level</code>, <code>intake_notes</code>,
+            <code>final_category</code>, <code>final_subcategory</code>, <code>final_risk_level</code>,
+            <code>assigned_vendor_id</code>, <code>assigned_vendor_type</code>, <code>response_time_minutes</code>,
+            <code>dispatch_notes</code>, <code>resolution_notes</code>, <code>resolution_category</code>,
+            <code>time_to_resolve_hours</code>,
+            <code>parts_cost_usd</code>, <code>labor_cost_usd</code>.
+          </div>
+          <div class="schema-block">
+            <div class="schema-block-title">qa_audit_findings.json  <span style="color:var(--light);font-weight:400">(post-hoc QA review)</span></div>
+            <code>audit_id</code>, <code>ticket_id</code> (FK → historicals),
+            <code>audited_by</code>, <code>audited_at</code>,
+            <code>was_over_escalated</code>, <code>over_escalation_reason</code>,
+            <code>was_reclassified</code>, <code>reclassification_note</code>,
+            <code>floor_was_wrong_at_intake</code>, <code>actual_floor</code>,
+            <code>notes</code>.
+          </div>
+          <div class="schema-block">
+            <div class="schema-block-title">caller_profiles.json</div>
+            <code>caller_name</code>, <code>phone_number</code>, <code>email</code>,
+            <code>tenant_company</code>, <code>tenant_id</code>, <code>contact_role</code>,
+            <code>preferred_language</code>,
+            <code>primary_building_id</code>, <code>primary_building_name</code>,
+            <code>primary_address</code>, <code>primary_city</code>,
+            <code>primary_floor</code>, <code>primary_suite</code>, <code>primary_building_type</code>,
+            <code>last_verified_at</code>, <code>active</code>.
+          </div>
+          <div class="schema-block">
+            <div class="schema-block-title">vendors.json</div>
+            <code>vendor_id</code>, <code>name</code>, <code>vendor_type</code>,
+            <code>specialties</code>, <code>coverage_cities</code>,
+            <code>building_types_certified</code>, <code>certifications</code>,
+            <code>response_sla_minutes</code>, <code>emergency_response_sla_minutes</code>,
+            <code>available_24_7</code>, <code>cost_tier</code>, <code>rating</code>,
+            <code>status_at_last_check</code>, <code>last_status_confirmed_at</code>, <code>phone</code>.
+          </div>
+        </div>
+      </details>
+
+      <div style="margin-top:22px; padding:18px 20px; border:1px solid rgba(37,99,235,.25); border-radius:8px; background:rgba(239,246,255,.5);">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#1d4ed8;margin-bottom:8px;">Agent contract</div>
+        <p style="font-size:13px;margin:0 0 10px 0;">
+          Your submission exposes a single callable we can invoke.
+          The batch harness (<code style="font-family:monospace;font-size:12px">evaluation/run_eval.py</code>)
+          imports it, runs it over the target transcript file (dev or test), and writes
+          <code style="font-family:monospace;font-size:12px">predictions.json</code>.
+        </p>
+<pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.55;margin:0;overflow-x:auto;">def classify(turns: list[dict], caller_phone: str | None) -&gt; dict:
+    """
+    Args:
+        turns:        structured dialogue — [{"speaker": "agent"|"caller", "text": ...}, ...]
+                      (flatten it yourself however you like)
+        caller_phone: phone number, or None if anonymous
+
+    Returns a dict with:
+        category, subcategory, risk_level,
+        needs_human_review, needs_clarification,
+        building_name, address, floor,
+        dispatched_vendor_id, dispatched_emergency_services,
+        call_summary,   # 2-3 sentence operator-style narrative
+        trainer_log     # {full_transcript, ai_prediction, human_override, final_decision}
+    """</pre>
+        <p style="font-size:12.5px;margin:12px 0 0 0;color:var(--light);">
+          While iterating (dev set):
+          <code style="font-family:monospace;font-size:12px">python evaluation/run_eval.py --agent my_agent:classify</code>
+          then <code style="font-family:monospace;font-size:12px">python evaluation/scoring.py --predictions predictions.json</code>.
+          For final grading, we run the same commands against
+          <code style="font-family:monospace;font-size:12px">eval_transcripts_test.json</code> using
+          a held-out answer key — same scoring methodology as your dev run.
+        </p>
+      </div>
+    </section>
+
+    <!-- Submission package -->
+    <section>
+      <div class="section-label">Submission</div>
+      <h2>What to Hand In So We Can Grade You</h2>
+      <p style="font-size:13px; margin-bottom:14px;">
+        Grading is fully automated. We receive your submission, drop it into a clean Python environment, run the
+        same <code style="font-family:monospace;font-size:12px">run_eval.py</code>
+        and <code style="font-family:monospace;font-size:12px">scoring.py</code> scripts you've been using, and
+        publish the resulting composite score. For this to work, your repo must hand us three things,
+        in a predictable shape.
+      </p>
+
+      <div style="display:grid; grid-template-columns: 1fr; gap:14px; margin-bottom:22px;">
+        <div style="border:1.5px solid var(--rule); border-radius:10px; padding:14px 18px;">
+          <div style="font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;">1 · Runnable agent module</div>
+          <p style="font-size:12.5px; margin:0 0 8px 0;">
+            A Python module that exposes a single callable matching the agent contract above:
+          </p>
+<pre style="background:#0f172a;color:#e2e8f0;padding:10px 12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.55;margin:0 0 8px 0;overflow-x:auto;">your_submission/
+├── agent.py          # def classify(turns, caller_phone) -&gt; dict
+├── requirements.txt  # pinned versions of every runtime dep
+├── README.md         # how to install + any env vars (e.g. OPENAI_API_KEY)
+└── design_doc.pdf    # see item 2</pre>
+          <p style="font-size:12.5px; margin:6px 0 0 0; color:var(--light);">
+            We test with: <code style="font-family:monospace;font-size:11.5px">pip install -r requirements.txt &amp;&amp; python evaluation/run_eval.py --agent your_submission.agent:classify --eval evaluation/eval_transcripts_test.json</code>.
+            If that command doesn't produce a valid <code style="font-family:monospace;font-size:11.5px">predictions.json</code>, your score is whatever <code style="font-family:monospace;font-size:11.5px">scoring.py</code> computes on a partial / empty file — which is almost always a fail.
+          </p>
+        </div>
+
+        <div style="border:1.5px solid var(--rule); border-radius:10px; padding:14px 18px;">
+          <div style="font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;">2 · Design document (PDF)</div>
+          <ul style="font-size:12.5px; margin:0; padding-left:20px;">
+            <li><strong>Derived policy appendix</strong> — your per-subcategory base-risk table, risk-modifier weights, risk-band cutoffs, subcategory→SOP mapping, subcategory→vendor-type mapping, and HITL trigger rule. Show how each was derived (historical aggregation? hand-tuned? LLM-judged?) and justify it.</li>
+            <li><strong>HITL design</strong> — graph diagram, exact gate trigger, what the reviewer sees, resume semantics.</li>
+            <li><strong>RAG strategy</strong> — what you embed, retrieval parameters, and how you reconcile records the QA team flagged as reclassified or over-escalated (don't just copy the historical label).</li>
+            <li><strong>Vendor-selection tie-breaker</strong> — rating? cost? SLA? past performance? — and what you do when nothing qualifies.</li>
+            <li><strong>Trainer-log spec</strong> — what your log captures, how you'd replay it to fine-tune the classifier later.</li>
+            <li><strong>Scale thought-experiment</strong> — how your design evolves at 10K calls / day.</li>
+          </ul>
+        </div>
+
+        <div style="border:1.5px solid var(--rule); border-radius:10px; padding:14px 18px;">
+          <div style="font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;">3 · Sealed &amp; reproducible</div>
+          <ul style="font-size:12.5px; margin:0; padding-left:20px;">
+            <li><strong>Determinism</strong> — for any given input, <code style="font-family:monospace;font-size:11.5px">classify()</code> should return the same output across runs (within the tolerance of your LLM provider). Pin temperatures, seeds, and model versions.</li>
+            <li><strong>Hard timeout</strong> — no single call should take &gt; 30 s; the harness moves on and counts missing fields as wrong. A 1,000-call eval should complete in under 1 hour on a typical laptop.</li>
+            <li><strong>Self-contained</strong> — don't read files outside your submission folder. If you build a vector index, ship the built artifact <em>or</em> a build step in the README.</li>
+            <li><strong>Network</strong> — you may call OpenAI / Anthropic / local LLM endpoints. Document which.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="padding:18px 20px; border:1px solid rgba(37,99,235,.25); border-radius:8px; background:rgba(239,246,255,.5);">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#1d4ed8;margin-bottom:10px;">Transcript batch vs. voice agent — same callable, two front-ends</div>
+        <p style="font-size:13px; margin:0 0 10px 0;">
+          The grading path is identical for both modes. Everything above applies — one
+          <code style="font-family:monospace;font-size:12px">classify()</code> function is the contract.
+          The only difference is how the <code style="font-family:monospace;font-size:12px">turns</code> list
+          gets produced before it reaches your agent:
+        </p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin:14px 0 8px 0;">
+          <div style="border:1px solid rgba(37,99,235,.25); border-radius:8px; padding:12px 14px; background:white;">
+            <div style="font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;">Batch (required)</div>
+            <p style="font-size:12px; margin:0 0 6px 0;">
+              <code style="font-family:monospace;font-size:11.5px">run_eval.py</code> reads
+              <code style="font-family:monospace;font-size:11.5px">evaluation/eval_transcripts_{dev,test}.json</code>, loops over
+              each row, and calls <code style="font-family:monospace;font-size:11.5px">classify(row["turns"], row["caller_phone"])</code>.
+            </p>
+            <p style="font-size:12px; margin:0; color:var(--light);">
+              <code style="font-family:monospace;font-size:11.5px">turns</code> is already shaped correctly — the pre-recorded dialogues (200 dev / 800 test) feed straight in.
+            </p>
+          </div>
+          <div style="border:1px solid rgba(217,119,6,.35); border-radius:8px; padding:12px 14px; background:rgba(254,243,199,.25);">
+            <div style="font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#92400e; margin-bottom:6px;">Voice shell (bonus)</div>
+            <p style="font-size:12px; margin:0 0 6px 0;">
+              Your STT layer captures the live conversation and accumulates turns into the same
+              <code style="font-family:monospace;font-size:11.5px">[{"speaker": ..., "text": ...}]</code> shape,
+              then hands them to the <em>same</em> <code style="font-family:monospace;font-size:11.5px">classify()</code>.
+              TTS reads back the resulting <code style="font-family:monospace;font-size:11.5px">call_summary</code> or dispatch confirmation.
+            </p>
+            <p style="font-size:12px; margin:0; color:var(--light);">
+              If your voice loop builds turns in any other shape, wrap it in a thin adapter. Don't fork <code style="font-family:monospace;font-size:11.5px">classify()</code>.
+            </p>
+          </div>
+        </div>
+        <p style="font-size:12.5px; margin:10px 0 0 0;">
+          <strong>Bottom line:</strong> build <code style="font-family:monospace;font-size:12px">classify()</code>
+          once, score it with the batch harness, and — if you're doing the voice bonus — wrap it behind
+          STT/TTS for the demo. Both modes are graded by the batch harness; the voice shell is a
+          demo-only layer and <em>never</em> the grading channel. This means a working voice demo should
+          require <strong>zero</strong> changes to your core agent.
+        </p>
+      </div>
+    </section>
+
+    <!-- Key talk points -->
+    <section>
+      <div class="section-label">Presentation</div>
+      <h2>Key Talk Points in Project Presentation</h2>
+      <div class="topic-list">
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Derived policy appendix</strong> — since <code style="font-family:monospace;font-size:12px">taxonomy.md</code> gives you <em>only</em> the label space, you must derive and submit: your per-subcategory base-risk table, your risk-modifier weights, your risk-band cutoffs, your SOP mapping, your subcategory→vendor-type mapping, and your HITL trigger logic. Show how each one was derived (aggregated from <code style="font-family:monospace;font-size:12px">historical_records.json</code>? hand-tuned from domain reasoning? LLM-judged?) and justify the choice.</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">HITL design and flow</strong> — walk through the graph, what triggers the validator gate (is it the risk band? a confidence threshold? a specific flag combination?), what the reviewer sees, and how the pipeline resumes after approve / override</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Risk-score design</strong> — your scoring approach (LLM-as-judge? rule-based modifiers on top of a base? regression on history?), which contextual signals you chose to extract, and how you mapped your score to one of LOW / MEDIUM / HIGH / EMERGENCY</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Clarification policy</strong> — when and how the agent asks a single disambiguating question on ambiguous calls without being annoying on clear ones</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Inarticulate / incomplete intake</strong> — how the system handles very short, garbled, or non-English callers, including callers with no location info</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Contradictory historical data</strong> — how the RAG handles conflicting past records (a small fraction were reclassified on-site, over-escalated at intake, or had the wrong floor logged) and how the agent weighs them against the current call</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Vendor selection strategy</strong> — how you pick one vendor from <code style="font-family:monospace;font-size:12px">vendors.json</code> (specialty + city + building cert + SLA + 24/7 + availability), how you break ties (rating / cost tier / historical response times), and what you do when <em>no</em> vendor qualifies</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">Performance metrics</strong> — latency breakdown per stage, subcategory / risk-level accuracy, HITL-F1, clarification-F1, vendor-match accuracy (use the provided <code style="font-family:monospace;font-size:12px">scoring.py</code> to self-evaluate)</span>
+        </div>
+        <div class="topic-item">
+          <div class="topic-bullet"></div>
+          <span><strong style="color:var(--ink)">10K calls / day — a thought experiment</strong> — you aren't expected to build for this scale; talk through how your design <em>would</em> evolve: concurrency, checkpoint persistence, reviewer queue, sampling, trainer-log retention</span>
+        </div>
+        <div class="topic-item" style="border-color: rgba(234,179,8,.35); background: rgba(254,243,199,.25);">
+          <div class="topic-bullet" style="background:#d97706;"></div>
+          <span><span style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#92400e;background:rgba(254,243,199,.8);border:1px solid rgba(234,179,8,.4);border-radius:3px;padding:1px 6px;margin-right:8px;">Bonus</span><strong style="color:var(--ink)">Voice intake end-to-end</strong> — live demo of voice-to-work-order through the full pipeline (STT → agent → TTS)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Acceptance -->
+    <section>
+      <div class="section-label">What We Grade</div>
+      <h2>Evaluation Axes &amp; Weights</h2>
+      <p style="font-size:12.5px; margin-bottom:12px;">
+        Your composite score is computed by
+        <code style="font-family:monospace;font-size:12px">evaluation/scoring.py</code> against your
+        <code style="font-family:monospace;font-size:12px">predictions.json</code>. Every axis below contributes
+        to a single score out of 100 — there are no per-axis pass/fail bars to game. Optimize against the
+        weights, not against minimum thresholds.
+      </p>
+      <p style="font-size:12.5px; margin-bottom:12px;">
+        <strong>Composite (out of 100):</strong> 15% subcategory · 10% category · 10% risk level · 15% HITL-F1 ·
+        5% clarification-F1 · 10% location fields · 10% vendor match ·
+        10% auto-resolution rate ·
+        5% call_summary · 10% trainer_log.
+        &nbsp;<strong style="color:#dc2626;">Hard cost:</strong> −5 points for every
+        <code style="font-family:monospace;font-size:12px">dispatched_emergency_services=true</code> on a call
+        where the correct action was a routine vendor dispatch.
+      </p>
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Axis</th>
+            <th>What it measures</th>
+            <th>Weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Subcategory accuracy</td>
+            <td>Exact leaf-label match — use the label strings as they appear in the historical records.</td>
+            <td>15%</td>
+          </tr>
+          <tr>
+            <td>Category accuracy</td>
+            <td>Top-level category match (10 categories).</td>
+            <td>10%</td>
+          </tr>
+          <tr>
+            <td>Risk-level accuracy</td>
+            <td>LOW / MEDIUM / HIGH / EMERGENCY band match.</td>
+            <td>10%</td>
+          </tr>
+          <tr>
+            <td>HITL-F1</td>
+            <td>F1 of <code style="font-family:monospace;font-size:12px">needs_human_review</code> against ground truth — pause on the calls that warrant a human, don't pause on the ones that don't. The central HITL skill.</td>
+            <td>15%</td>
+          </tr>
+          <tr>
+            <td>Clarification-F1</td>
+            <td>F1 of <code style="font-family:monospace;font-size:12px">needs_clarification</code> — ask only when genuinely ambiguous.</td>
+            <td>5%</td>
+          </tr>
+          <tr>
+            <td>Location fields</td>
+            <td>building_name + address + floor all match. Caller profiles give defaults; the transcript always wins on conflict.</td>
+            <td>10%</td>
+          </tr>
+          <tr>
+            <td>Vendor match</td>
+            <td>Dispatched vendor satisfies specialty + coverage + certification + SLA + availability. When nothing qualifies, escalate (don't dispatch).</td>
+            <td>10%</td>
+          </tr>
+          <tr>
+            <td>Auto-resolution rate</td>
+            <td>Of the calls labeled as safe to close without a human (LOW risk, no clarification needed, vendor available), what fraction did your agent in fact close? Counterbalances over-cautious routing.</td>
+            <td>10%</td>
+          </tr>
+          <tr>
+            <td>Call summary</td>
+            <td>2–3 sentence operator-style summary on every prediction.</td>
+            <td>5%</td>
+          </tr>
+          <tr>
+            <td>Trainer log</td>
+            <td>Every call logs AI prediction + final decision + any override.</td>
+            <td>10%</td>
+          </tr>
+          <tr>
+            <td>False-911 hard cost</td>
+            <td><code style="font-family:monospace;font-size:12px">dispatched_emergency_services=true</code> on a call where the right answer was a routine vendor dispatch — these are mixed into the eval set and graded silently.</td>
+            <td>−5 / case</td>
+          </tr>
+          <tr>
+            <td>Operational latency</td>
+            <td>Per-call latency must be reasonable. Hard timeout at 30 s; aim well below that. The 1,000-call eval should complete in under an hour on a typical laptop.</td>
+            <td>operational</td>
+          </tr>
+          <tr>
+            <td>Voice intake end-to-end<br><span style="font-size:12px;color:var(--light)">STT + agent + TTS demo</span></td>
+            <td>Live demo of voice → work-order through the full pipeline.</td>
+            <td><span class="status-tbd">Bonus</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Hints -->
+    <section>
+      <div class="section-label">Resources</div>
+      <h2>Hints</h2>
+      <div class="hints-section">
+        <details>
+          <summary>Suggested frameworks and packages — expand if you feel lost</summary>
+          <div class="hints-body">
+
+            <div>
+              <div class="hint-group-title">Orchestration</div>
+              <ul class="pkg-list">
+                <li><span class="pkg-name">langgraph</span> <span class="pkg-req">required</span></li>
+                <li><span class="pkg-name">langgraph.checkpoint.memory</span> <span class="pkg-note">InMemorySaver for pause/resume</span></li>
+                <li><span class="pkg-name">langgraph.types</span> <span class="pkg-note">interrupt, Command</span></li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="hint-group-title">LLM + Embeddings</div>
+              <ul class="pkg-list">
+                <li><span class="pkg-name">langchain-openai</span> <span class="pkg-note">ChatOpenAI, OpenAIEmbeddings</span></li>
+                <li><span class="pkg-name">langchain-core</span> <span class="pkg-note">Document, prompts</span></li>
+                <li><span class="pkg-name">pydantic</span> <span class="pkg-note">structured output models</span></li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="hint-group-title">Retrieval</div>
+              <ul class="pkg-list">
+                <li><span class="pkg-name">langchain-chroma</span> <span class="pkg-note">vector store</span></li>
+                <li><span class="pkg-name">chromadb</span> <span class="pkg-note">local persistence</span></li>
+                <li><span class="pkg-name">langchain-text-splitters</span> <span class="pkg-note">chunking for large docs</span></li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="hint-group-title">Interface &amp; Utilities</div>
+              <ul class="pkg-list">
+                <li><span class="pkg-name">streamlit</span> <span class="pkg-note">reviewer dashboard</span></li>
+                <li><span class="pkg-name">python-dotenv</span> <span class="pkg-note">API key management</span></li>
+                <li><span class="pkg-name">typing-extensions</span> <span class="pkg-note">TypedDict for graph state</span></li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="hint-group-title">Voice API (bonus — pick one)</div>
+              <ul class="pkg-list">
+                <li><span class="pkg-name">Deepgram</span> <span class="pkg-note">real-time STT, strong accuracy</span></li>
+                <li><span class="pkg-name">AssemblyAI</span> <span class="pkg-note">good free tier, async transcription</span></li>
+                <li><span class="pkg-name">Twilio + OpenAI Realtime</span> <span class="pkg-note">full telephony integration</span></li>
+                <li><span class="pkg-name">ElevenLabs</span> <span class="pkg-note">TTS for voice responses</span></li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="hint-group-title">Production Checkpointing</div>
+              <ul class="pkg-list">
+                <li><span class="pkg-name">langgraph-checkpoint-sqlite</span> <span class="pkg-note">SqliteSaver — persists across restarts</span></li>
+                <li><span class="pkg-name">langgraph-checkpoint-postgres</span> <span class="pkg-note">PostgresSaver — for scale</span></li>
+              </ul>
+            </div>
+
+            <div class="hint-note">
+              <strong>Feeling lost?</strong> Go back to the Week 4 assignment Part 1. It walks through
+              the full pipeline — extract, retrieve, classify, interrupt, human review, resume — with
+              working code and a Streamlit app you can run locally with
+              <code style="font-family:monospace;font-size:12px">streamlit run hitl_app.py</code>.
+              Your final project extends that foundation; it does not replace it.
+            </div>
+
+          </div>
+        </details>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="footer">
+    <div class="footer-left">Turing × UCSB × ACM &nbsp;·&nbsp; Final Project &nbsp;·&nbsp; April 2026</div>
+    <div class="footer-right">Weeks 7 – 10 &nbsp;·&nbsp; LangGraph · RAG · HITL</div>
+  </div>
+
+</div>
+</body>
+</html>
