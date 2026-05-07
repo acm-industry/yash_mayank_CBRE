@@ -72,3 +72,74 @@ python evaluation/run_eval.py \
 
 The full evaluation rubric, axis weights, and hard-cost rules are in
 `final-assignment.html` → "What We Grade".
+
+---
+
+## Reproducing our results (Yash & Mayank submission)
+
+Our agent lives in `cbre_agent/agent.py`. The commands below are the concrete
+version of the Quick Start above, with our module path substituted in.
+
+### Prerequisites
+
+- Python ≥ 3.9
+- An OpenAI API key (GPT-4o-mini + text-embedding-3-small)
+
+### 1 — Environment
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r cbre_agent/requirements.txt
+```
+
+Create a `.env` file in the project root (same level as `README.md`):
+
+```
+OPENAI_API_KEY=sk-...
+```
+
+### 2 — Build the vector index (one-time, ~5 min)
+
+The ChromaDB index is gitignored and must be built locally before the agent can run.
+It embeds all 10,000 historical records using `text-embedding-3-small`.
+
+```bash
+python cbre_agent/build_index.py
+# Output: cbre_agent/chroma_db/  (~200 MB)
+```
+
+### 3 — Smoke test a single transcript
+
+```bash
+python test_eval.py
+# Runs transcript #0 from the dev set and prints the classify() output.
+```
+
+### 4 — Run the full dev-set eval and score (reproduces 84.31/100)
+
+```bash
+# Generate predictions over all 200 dev transcripts (~8 min)
+python evaluation/run_eval.py \
+    --agent cbre_agent.agent:classify \
+    --eval evaluation/eval_transcripts_dev.json \
+    --out predictions.json
+
+# Score against ground truth
+python evaluation/scoring.py \
+    --eval evaluation/eval_transcripts_dev.json \
+    --ground-truth evaluation/dev_labels.json \
+    --predictions predictions.json
+```
+
+### 5 — Regenerate test-set predictions (what we submitted)
+
+```bash
+python evaluation/run_eval.py \
+    --agent cbre_agent.agent:classify \
+    --eval evaluation/eval_transcripts_test.json \
+    --out predictions.json
+# Overwrites predictions.json with 800 test-set rows (~32 min)
+```
+
+The `predictions.json` already committed to this repo was generated with the
+command above and is what we submit for final grading.
