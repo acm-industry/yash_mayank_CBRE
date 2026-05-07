@@ -141,5 +141,3 @@ python evaluation/run_eval.py \
 # Overwrites predictions.json with 800 test-set rows (~32 min)
 ```
 
-The `predictions.json` already committed to this repo was generated with the
-command above and is what we submit for final grading.
