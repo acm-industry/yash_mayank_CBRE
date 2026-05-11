@@ -115,7 +115,7 @@ python test_eval.py
 # Runs transcript #0 from the dev set and prints the classify() output.
 ```
 
-### 4 — Run the full dev-set eval and score (reproduces 84.31/100)
+### 4 — Run the full dev-set eval and score (reproduces current progress)
 
 ```bash
 # Generate predictions over all 200 dev transcripts (~8 min)
@@ -131,7 +131,7 @@ python evaluation/scoring.py \
     --predictions predictions.json
 ```
 
-### 5 — Regenerate test-set predictions (what we submitted)
+### 5 — Regenerate test-set predictions
 
 ```bash
 python evaluation/run_eval.py \
@@ -141,5 +141,3 @@ python evaluation/run_eval.py \
 # Overwrites predictions.json with 800 test-set rows (~32 min)
 ```
 
-The `predictions.json` already committed to this repo was generated with the
-command above and is what we submit for final grading.
