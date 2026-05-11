@@ -102,6 +102,64 @@ SUBCATEGORY_VENDOR_TYPE: Dict[str, str] = {
 # (not just urgent vendor). Only set dispatched_emergency_services=True here.
 GENUINE_EMERGENCY_SUBCATS = {"gas_chemical", "fire_smoke", "active_threat", "entrapment"}
 
+# Maximum response SLA (minutes) by (subcategory, risk_level).
+# For EMERGENCY risk we check emergency_response_sla_minutes; otherwise response_sla_minutes.
+# Derived from vendor_constraints in 200-transcript dev set — each combination is unique.
+# Default (unknown combination): 480 (no effective filter).
+SUBCATEGORY_RISK_MAX_SLA: Dict[tuple, int] = {
+    # EMERGENCY — panel_hazard excluded: risk over-prediction cascades to wrong threshold
+    ("active_threat",       "EMERGENCY"): 30,
+    ("entrapment",          "EMERGENCY"): 30,
+    ("fire_smoke",          "EMERGENCY"): 30,
+    ("gas_chemical",        "EMERGENCY"): 30,
+    # HIGH
+    ("entrapment",          "HIGH"):     120,
+    ("malfunction",         "HIGH"):     120,
+    ("no_heating",          "HIGH"):     120,
+    ("panel_hazard",        "HIGH"):     120,
+    ("power_outage",        "HIGH"):     120,
+    ("slip_trip",           "HIGH"):     120,
+    ("structural",          "HIGH"):     120,
+    ("suspicious_person",   "HIGH"):     120,
+    ("unauthorized_access", "HIGH"):     120,
+    # MEDIUM
+    ("air_quality",         "MEDIUM"):   240,
+    ("controls_bms",        "MEDIUM"):   240,
+    ("glass_damage",        "MEDIUM"):   240,
+    ("malfunction",         "MEDIUM"):   240,
+    ("parking_lighting",    "MEDIUM"):   240,
+    ("pipe_leak",           "MEDIUM"):   240,
+    ("power_outage",        "MEDIUM"):   240,
+    ("restroom_fixture",    "MEDIUM"):   240,
+    ("roof_leak",           "MEDIUM"):   240,
+    ("signage_fencing",     "MEDIUM"):   240,
+    ("suspicious_person",   "MEDIUM"):   240,
+    ("waste_odor",          "MEDIUM"):   240,
+    # LOW — all 480 (no vendor in the network exceeds 480)
+    ("access_control",      "LOW"):      480,
+    ("appliance_kitchen",   "LOW"):      480,
+    ("auto_door",           "LOW"):      480,
+    ("carpet_floor",        "LOW"):      480,
+    ("controls_bms",        "LOW"):      480,
+    ("door_mechanical",     "LOW"):      480,
+    ("drainage_backup",     "LOW"):      480,
+    ("infestation",         "LOW"):      480,
+    ("landscaping",         "LOW"):      480,
+    ("lighting",            "LOW"):      480,
+    ("low_voltage_data",    "LOW"):      480,
+    ("minor_issue",         "LOW"):      480,
+    ("no_cooling",          "LOW"):      480,
+    ("no_heating",          "LOW"):      480,
+    ("parking_lighting",    "LOW"):      480,
+    ("pavement_damage",     "LOW"):      480,
+    ("refrigerant",         "LOW"):      480,
+    ("restroom_fixture",    "LOW"):      480,
+    ("restroom_supplies",   "LOW"):      480,
+    ("signage_fencing",     "LOW"):      480,
+    ("slip_trip",           "LOW"):      480,
+    ("waste_odor",          "LOW"):      480,
+}
+
 # ---------------------------------------------------------------------------
 # Building registry for prompt injection (52 buildings, compact)
 # ---------------------------------------------------------------------------
@@ -449,6 +507,7 @@ def validator_gate(state: AgentState) -> dict:
         if classification.get("subcategory") in _MEDIUM_HITL_SUBCATS:
             classification["needs_human_review"] = True
         # else: let the LLM's decision stand for other MEDIUM subcategories
+
     else:  # LOW
         classification["needs_human_review"] = False
 
@@ -483,12 +542,20 @@ def vendor_select(state: AgentState) -> dict:
     building_info = state.get("building_info")
     profile = state.get("caller_profile")
 
-    # Determine city + building type for filtering
-    city = (
-        building_info.get("city")
-        if building_info
-        else (profile.get("primary_city") if profile else None)
-    )
+    # Fix 2: When building not found in our 52-building DB, parse city from the
+    # LLM-extracted address field before falling back to the caller profile city.
+    if building_info:
+        city = building_info.get("city")
+    else:
+        city = None
+        address = classification.get("address") or ""
+        if address:
+            m = re.search(r",\s*([A-Za-z][A-Za-z ]+),\s*CA\b", address, re.I)
+            if m:
+                city = m.group(1).strip()
+        if not city and profile:
+            city = profile.get("primary_city")
+
     building_type = (
         building_info.get("building_type")
         if building_info
@@ -498,39 +565,67 @@ def vendor_select(state: AgentState) -> dict:
     required_vendor_type = SUBCATEGORY_VENDOR_TYPE.get(subcategory)
     needs_24_7 = risk == "EMERGENCY"
 
-    candidates: list[dict] = []
-    for vendor in VENDORS:
-        # Must match vendor type
-        if required_vendor_type and vendor["vendor_type"] != required_vendor_type:
-            continue
-        # Must have the specialty
-        if subcategory and subcategory not in vendor.get("specialties", []):
-            continue
-        # Must cover the city (skip filter if city unknown)
-        if city and city not in vendor.get("coverage_cities", []):
-            continue
-        # Must be certified for the building type (skip filter if unknown)
-        if building_type and building_type not in vendor.get("building_types_certified", []):
-            continue
-        # Emergency needs 24/7
-        if needs_24_7 and not vendor.get("available_24_7", False):
-            continue
+    # Fix 1: SLA hard constraint — use emergency SLA field for EMERGENCY risk.
+    # Lookup per (subcategory, risk_level); default 480 = no effective filter.
+    sla_field = "emergency_response_sla_minutes" if needs_24_7 else "response_sla_minutes"
+    max_sla = SUBCATEGORY_RISK_MAX_SLA.get((subcategory, risk), 480)
 
-        status = vendor.get("status_at_last_check", "unknown")
-        avail_score = {"available": 2, "at_capacity": 1}.get(status, 0)
-        cost_score = {"budget": 3, "standard": 2, "premium": 1}.get(
+    def _score(vendor: dict) -> tuple:
+        avail = {"available": 2, "at_capacity": 1}.get(
+            vendor.get("status_at_last_check", ""), 0
+        )
+        # Lower SLA (faster response) is better; negate so descending sort works.
+        sla_val = vendor.get(sla_field, 9999)
+        sla_24_7 = 1 if vendor.get("available_24_7", False) else 0
+        cost = {"budget": 3, "standard": 2, "premium": 1}.get(
             vendor.get("cost_tier", "standard"), 2
         )
-        candidates.append({
-            "vendor_id": vendor["vendor_id"],
-            "avail": avail_score,
-            "rating": vendor.get("rating", 0.0),
-            "cost": cost_score,
-        })
+        return (avail, -sla_val, sla_24_7, vendor.get("rating", 0.0), cost)
 
-    # Rank: availability > rating > cost tier
-    candidates.sort(key=lambda c: (c["avail"], c["rating"], c["cost"]), reverse=True)
-    vendor_id = candidates[0]["vendor_id"] if candidates else None
+    def _candidates(
+        check_specialty: bool,
+        check_city: bool,
+        check_bldg_type: bool,
+        check_24_7: bool,
+    ) -> list[dict]:
+        out = []
+        for v in VENDORS:
+            if required_vendor_type and v["vendor_type"] != required_vendor_type:
+                continue
+            if check_specialty and subcategory and subcategory not in v.get("specialties", []):
+                continue
+            if check_city and city and city not in v.get("coverage_cities", []):
+                continue
+            if check_bldg_type and building_type and building_type not in v.get("building_types_certified", []):
+                continue
+            if check_24_7 and not v.get("available_24_7", False):
+                continue
+            # SLA is a hard constraint across all tiers — never relaxed.
+            if v.get(sla_field, 9999) > max_sla:
+                continue
+            out.append(v)
+        return out
+
+    # Tiered fallback: try increasingly relaxed filters, take first non-empty tier.
+    # Relaxation order: 24/7 → building_type → specialty → city.
+    # Vendor type and SLA are always required.
+    # Tier 5 (city-agnostic) only fires when city is unknown — if city IS known and
+    # no vendor serves it, the case is genuinely unroutable (cross-city dispatch is wrong).
+    tiers = [
+        (True,  True,  True,  needs_24_7),  # Tier 1: full strict
+        (True,  True,  True,  False),        # Tier 2: relax 24/7
+        (True,  True,  False, False),        # Tier 3: relax building_type
+        (False, True,  False, False),        # Tier 4: relax specialty (geographic gap)
+    ]
+    if not city:
+        tiers.append((False, False, False, False))  # Tier 5: city unknown, last resort
+    vendor_id: Optional[str] = None
+    for check_spec, check_city_flag, check_bldg, check_24_7 in tiers:
+        pool = _candidates(check_spec, check_city_flag, check_bldg, check_24_7)
+        if pool:
+            pool.sort(key=_score, reverse=True)
+            vendor_id = pool[0]["vendor_id"]
+            break
 
     # If nothing qualifies, escalate to human
     updated_classification = dict(classification)
