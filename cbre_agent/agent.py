@@ -3,7 +3,8 @@ CBRE Call Intake HITL-RAG Agent
 Exposes: classify(turns, caller_phone) -> dict
 
 Pipeline (LangGraph state machine):
-  intake_extract → rag_retrieve → grader_gate → classify_llm → validator_gate
+  intake_extract → rag_retrieve ⇄ grader_gate → classify_llm → validator_gate
+       (rag_query copy of transcript; optional rewrite_rag_query loop if grader fails)
                                                        ↓
                                               vendor_select → log_result
 
@@ -30,6 +31,9 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 load_dotenv()
+
+# Max times we run rewrite_rag_query after a failed grade (each run re-embeds and re-retrieves).
+_MAX_RAG_REWRITE_ATTEMPTS = 2
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -245,6 +249,11 @@ class GraderGate(BaseModel):
         )
     )
 
+class RewriteRAGQuery(BaseModel):
+    """Rewrite the RAG query to be more specific to the current call."""
+    query: str = Field(description="The rewritten RAG query.")
+
+
 
 # ---------------------------------------------------------------------------
 # LangGraph state
@@ -255,6 +264,10 @@ class AgentState(TypedDict):
     turns: List[dict]
     caller_phone: Optional[str]
     transcript_text: str
+    # Embedding search text: copy of transcript at intake; rewrite_rag_query may replace it.
+    rag_query: str
+    # Number of completed rewrite_rag_query runs (caps retrieve→grade loops).
+    rag_rewrite_count: int
     caller_profile: Optional[dict]
     retrieved_records: List[dict]
     rag_documents_relevant: Optional[bool]
@@ -388,6 +401,19 @@ Decide if AT LEAST ONE document is substantively relevant: same maintenance doma
 Set relevant=true only if a human dispatcher could reasonably say "this old ticket helps classify THIS call."
 Set relevant=false if the matches are off-topic, misleading, or only superficially similar."""
 
+
+REWRITE_PROMPT = """You are rewriting the RAG query to be more specific to the current call.
+
+Current RAG query:
+{query}
+
+Current call transcript:
+{transcript}
+
+Rewrite the query to be more specific to the current call."""
+
+
+
 # ---------------------------------------------------------------------------
 # Node: intake_extract
 # ---------------------------------------------------------------------------
@@ -401,6 +427,8 @@ def intake_extract(state: AgentState) -> dict:
     profile = CALLER_PROFILES.get(state.get("caller_phone") or "")
     return {
         "transcript_text": transcript_text,
+        "rag_query": transcript_text,
+        "rag_rewrite_count": 0,
         "caller_profile": profile,
         "retrieved_records": [],
         "classification": None,
@@ -419,7 +447,8 @@ def intake_extract(state: AgentState) -> dict:
 
 
 def rag_retrieve(state: AgentState) -> dict:
-    docs = _VECTOR_STORE.similarity_search(state["transcript_text"], k=5)
+    q = (state.get("rag_query") or "").strip() or (state.get("transcript_text") or "")
+    docs = _VECTOR_STORE.similarity_search(q, k=5)
     records = []
     for doc in docs:
         entry = dict(doc.metadata)
@@ -461,6 +490,40 @@ def grader_gate(state: AgentState) -> dict:
         relevant = True
 
     return {"rag_documents_relevant": relevant}
+
+
+def _route_after_grader(state: AgentState) -> str:
+    if state.get("rag_documents_relevant") is not False:
+        return "classify_llm"
+    if (state.get("rag_rewrite_count") or 0) < _MAX_RAG_REWRITE_ATTEMPTS:
+        return "rewrite_rag_query"
+    return "classify_llm"
+
+
+# ---------------------------------------------------------------------------
+# Node: rewrite_rag_query
+# ---------------------------------------------------------------------------
+def rewrite_rag_query(state: AgentState) -> dict:
+    """LLM-rewritten retrieval string; always bump rag_rewrite_count to avoid infinite loops."""
+    prior = state.get("rag_rewrite_count") or 0
+    next_count = prior + 1
+    query = (state.get("rag_query") or "").strip() or (state.get("transcript_text") or "")
+    transcript = state.get("transcript_text") or ""
+    user_content = REWRITE_PROMPT.format(query=query, transcript=transcript)
+    try:
+        structured = _LLM.with_structured_output(RewriteRAGQuery)
+        result: RewriteRAGQuery = structured.invoke(
+            [
+                SystemMessage(
+                    content="You rewrite text for vector search only; do not invent facts not supported by the transcript."
+                ),
+                HumanMessage(content=user_content),
+            ]
+        )
+        new_q = (result.query or "").strip() or query
+    except Exception:
+        new_q = query
+    return {"rag_query": new_q, "rag_rewrite_count": next_count}
 
 
 # ---------------------------------------------------------------------------
@@ -747,6 +810,7 @@ def _build_graph() -> Any:
     builder.add_node("intake_extract", intake_extract)
     builder.add_node("rag_retrieve", rag_retrieve)
     builder.add_node("grader_gate", grader_gate)
+    builder.add_node("rewrite_rag_query", rewrite_rag_query)
     builder.add_node("classify_llm", classify_llm)
     builder.add_node("validator_gate", validator_gate)
     builder.add_node("vendor_select", vendor_select)
@@ -755,7 +819,12 @@ def _build_graph() -> Any:
     builder.set_entry_point("intake_extract")
     builder.add_edge("intake_extract", "rag_retrieve")
     builder.add_edge("rag_retrieve", "grader_gate")
-    builder.add_edge("grader_gate", "classify_llm")
+    builder.add_conditional_edges(
+        "grader_gate",
+        _route_after_grader,
+        {"classify_llm": "classify_llm", "rewrite_rag_query": "rewrite_rag_query"},
+    )
+    builder.add_edge("rewrite_rag_query", "rag_retrieve")
     builder.add_edge("classify_llm", "validator_gate")
     builder.add_edge("validator_gate", "vendor_select")
     builder.add_edge("vendor_select", "log_result")
@@ -787,6 +856,8 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         "turns": turns,
         "caller_phone": caller_phone,
         "transcript_text": "",
+        "rag_query": "",
+        "rag_rewrite_count": 0,
         "caller_profile": None,
         "retrieved_records": [],
         "classification": None,
