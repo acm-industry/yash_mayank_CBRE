@@ -3,7 +3,7 @@ CBRE Call Intake HITL-RAG Agent
 Exposes: classify(turns, caller_phone) -> dict
 
 Pipeline (LangGraph state machine):
-  intake_extract → rag_retrieve → classify_llm → validator_gate
+  intake_extract → rag_retrieve → grader_gate → classify_llm → validator_gate
                                                        ↓
                                               vendor_select → log_result
 
@@ -232,6 +232,20 @@ class CallClassification(BaseModel):
                     "State issue, location, and action taken."
     )
 
+class GraderGate(BaseModel):
+    """Structured relevance judgment for RAG few-shot context."""
+
+    relevant: bool = Field(
+        description=(
+            "True if at least one retrieved document describes the same kind of "
+            "facilities/maintenance problem (issue type and severity in the same ballpark) "
+            "as the current call — useful as a classification hint. "
+            "False if all snippets are unrelated, wrong trade (e.g. HVAC vs plumbing leak), "
+            "or only trivial word overlap without same issue meaning."
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # LangGraph state
 # ---------------------------------------------------------------------------
@@ -243,6 +257,7 @@ class AgentState(TypedDict):
     transcript_text: str
     caller_profile: Optional[dict]
     retrieved_records: List[dict]
+    rag_documents_relevant: Optional[bool]
     classification: Optional[Dict[str, Any]]
     building_info: Optional[dict]
     vendor_id: Optional[str]
@@ -357,6 +372,22 @@ A caller who is scared or upset does NOT make a call an EMERGENCY. Evidence of a
 {_BUILDING_LIST}
 """
 
+# User message template for grader (use .format(documents=..., description=...)).
+# Kept separate from the model schema: the model returns structured GraderGate, not free text.
+GRADE_PROMPT = """You are grading whether retrieved historical tickets should be used as few-shot context for classifying the CURRENT call.
+
+Retrieved documents (each may be a short ticket summary):
+{documents}
+
+--- CURRENT CALL (full transcript; source of truth) ---
+{description}
+---
+
+Decide if AT LEAST ONE document is substantively relevant: same maintenance domain and comparable situation (not merely sharing a building name or generic words like "floor" or "issue").
+
+Set relevant=true only if a human dispatcher could reasonably say "this old ticket helps classify THIS call."
+Set relevant=false if the matches are off-topic, misleading, or only superficially similar."""
+
 # ---------------------------------------------------------------------------
 # Node: intake_extract
 # ---------------------------------------------------------------------------
@@ -378,6 +409,7 @@ def intake_extract(state: AgentState) -> dict:
         "dispatched_emergency": False,
         "human_override": None,
         "final_decision": None,
+        "rag_documents_relevant": None,
     }
 
 
@@ -395,6 +427,41 @@ def rag_retrieve(state: AgentState) -> dict:
         records.append(entry)
     return {"retrieved_records": records}
 
+# ---------------------------------------------------------------------------
+# Node: grader_gate
+# ---------------------------------------------------------------------------
+
+
+def grader_gate(state: AgentState) -> dict:
+    """Grade whether retrieved Chroma docs are useful few-shot context (before classify_llm)."""
+    records = state.get("retrieved_records") or []
+    if not records:
+        return {"rag_documents_relevant": True}
+
+    documents = "\n\n".join(
+        f"--- Document {i} ---\n{(rec.get('_text') or '').strip()}"
+        for i, rec in enumerate(records, 1)
+    )
+    user_content = GRADE_PROMPT.format(
+        documents=documents,
+        description=state.get("transcript_text") or "",
+    )
+    try:
+        structured = _LLM.with_structured_output(GraderGate)
+        graded: GraderGate = structured.invoke(
+            [
+                SystemMessage(
+                    content="You output only the structured relevance judgment; be strict about misleading retrieval."
+                ),
+                HumanMessage(content=user_content),
+            ]
+        )
+        relevant = graded.relevant
+    except Exception:
+        relevant = True
+
+    return {"rag_documents_relevant": relevant}
+
 
 # ---------------------------------------------------------------------------
 # Node: classify_llm
@@ -404,9 +471,10 @@ def rag_retrieve(state: AgentState) -> dict:
 def classify_llm(state: AgentState) -> dict:
     profile = state.get("caller_profile")
 
-    # Format similar tickets for few-shot context
+    # Format similar tickets for few-shot context (omit if grader said irrelevant)
     rag_block = ""
-    for i, rec in enumerate(state.get("retrieved_records", []), 1):
+    use_rag = state.get("rag_documents_relevant") is not False
+    for i, rec in enumerate(state.get("retrieved_records", []) if use_rag else [], 1):
         flag = ""
         if rec.get("was_reclassified") == "True":
             flag = " [note: intake was reclassified on-site — final label shown]"
@@ -678,6 +746,7 @@ def _build_graph() -> Any:
 
     builder.add_node("intake_extract", intake_extract)
     builder.add_node("rag_retrieve", rag_retrieve)
+    builder.add_node("grader_gate", grader_gate)
     builder.add_node("classify_llm", classify_llm)
     builder.add_node("validator_gate", validator_gate)
     builder.add_node("vendor_select", vendor_select)
@@ -685,7 +754,8 @@ def _build_graph() -> Any:
 
     builder.set_entry_point("intake_extract")
     builder.add_edge("intake_extract", "rag_retrieve")
-    builder.add_edge("rag_retrieve", "classify_llm")
+    builder.add_edge("rag_retrieve", "grader_gate")
+    builder.add_edge("grader_gate", "classify_llm")
     builder.add_edge("classify_llm", "validator_gate")
     builder.add_edge("validator_gate", "vendor_select")
     builder.add_edge("vendor_select", "log_result")
@@ -725,6 +795,7 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         "dispatched_emergency": False,
         "human_override": None,
         "final_decision": None,
+        "rag_documents_relevant": None,
     }
 
     # First invocation — may pause at validator_gate if needs_human_review
