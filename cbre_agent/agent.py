@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
@@ -277,6 +278,22 @@ class AgentState(TypedDict):
     dispatched_emergency: bool
     human_override: Optional[Dict[str, Any]]
     final_decision: Optional[Dict[str, Any]]
+    # Per-node wall times (seconds); multiple entries when a node runs more than once (e.g. RAG loop).
+    node_timings: List[Dict[str, Any]]
+
+
+def _merge_with_timing(
+    state: AgentState,
+    node: str,
+    elapsed_s: float,
+    updates: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Append one timing event and merge `updates` into the graph state."""
+    out = dict(updates)
+    ev = list(state.get("node_timings") or [])
+    ev.append({"node": node, "seconds": round(elapsed_s, 6)})
+    out["node_timings"] = ev
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -420,25 +437,32 @@ Rewrite the query to be more specific to the current call."""
 
 
 def intake_extract(state: AgentState) -> dict:
+    t0 = time.perf_counter()
     turns = state["turns"]
     transcript_text = "\n".join(
         f"[{t['speaker'].upper()}] {t['text']}" for t in turns
     )
     profile = CALLER_PROFILES.get(state.get("caller_phone") or "")
-    return {
-        "transcript_text": transcript_text,
-        "rag_query": transcript_text,
-        "rag_rewrite_count": 0,
-        "caller_profile": profile,
-        "retrieved_records": [],
-        "classification": None,
-        "building_info": None,
-        "vendor_id": None,
-        "dispatched_emergency": False,
-        "human_override": None,
-        "final_decision": None,
-        "rag_documents_relevant": None,
-    }
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state,
+        "intake_extract",
+        dt,
+        {
+            "transcript_text": transcript_text,
+            "rag_query": transcript_text,
+            "rag_rewrite_count": 0,
+            "caller_profile": profile,
+            "retrieved_records": [],
+            "classification": None,
+            "building_info": None,
+            "vendor_id": None,
+            "dispatched_emergency": False,
+            "human_override": None,
+            "final_decision": None,
+            "rag_documents_relevant": None,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +471,7 @@ def intake_extract(state: AgentState) -> dict:
 
 
 def rag_retrieve(state: AgentState) -> dict:
+    t0 = time.perf_counter()
     q = (state.get("rag_query") or "").strip() or (state.get("transcript_text") or "")
     docs = _VECTOR_STORE.similarity_search(q, k=5)
     records = []
@@ -454,7 +479,8 @@ def rag_retrieve(state: AgentState) -> dict:
         entry = dict(doc.metadata)
         entry["_text"] = doc.page_content
         records.append(entry)
-    return {"retrieved_records": records}
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(state, "rag_retrieve", dt, {"retrieved_records": records})
 
 # ---------------------------------------------------------------------------
 # Node: grader_gate
@@ -463,9 +489,13 @@ def rag_retrieve(state: AgentState) -> dict:
 
 def grader_gate(state: AgentState) -> dict:
     """Grade whether retrieved Chroma docs are useful few-shot context (before classify_llm)."""
+    t0 = time.perf_counter()
     records = state.get("retrieved_records") or []
     if not records:
-        return {"rag_documents_relevant": True}
+        dt = time.perf_counter() - t0
+        return _merge_with_timing(
+            state, "grader_gate", dt, {"rag_documents_relevant": True}
+        )
 
     documents = "\n\n".join(
         f"--- Document {i} ---\n{(rec.get('_text') or '').strip()}"
@@ -489,7 +519,10 @@ def grader_gate(state: AgentState) -> dict:
     except Exception:
         relevant = True
 
-    return {"rag_documents_relevant": relevant}
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state, "grader_gate", dt, {"rag_documents_relevant": relevant}
+    )
 
 
 def _route_after_grader(state: AgentState) -> str:
@@ -505,6 +538,7 @@ def _route_after_grader(state: AgentState) -> str:
 # ---------------------------------------------------------------------------
 def rewrite_rag_query(state: AgentState) -> dict:
     """LLM-rewritten retrieval string; always bump rag_rewrite_count to avoid infinite loops."""
+    t0 = time.perf_counter()
     prior = state.get("rag_rewrite_count") or 0
     next_count = prior + 1
     query = (state.get("rag_query") or "").strip() or (state.get("transcript_text") or "")
@@ -523,7 +557,13 @@ def rewrite_rag_query(state: AgentState) -> dict:
         new_q = (result.query or "").strip() or query
     except Exception:
         new_q = query
-    return {"rag_query": new_q, "rag_rewrite_count": next_count}
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state,
+        "rewrite_rag_query",
+        dt,
+        {"rag_query": new_q, "rag_rewrite_count": next_count},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -532,6 +572,7 @@ def rewrite_rag_query(state: AgentState) -> dict:
 
 
 def classify_llm(state: AgentState) -> dict:
+    t0 = time.perf_counter()
     profile = state.get("caller_profile")
 
     # Format similar tickets for few-shot context (omit if grader said irrelevant)
@@ -590,7 +631,13 @@ def classify_llm(state: AgentState) -> dict:
     if not classification.get("floor") and profile and profile.get("primary_floor"):
         classification["floor"] = profile["primary_floor"]
 
-    return {"classification": classification, "building_info": building_info}
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state,
+        "classify_llm",
+        dt,
+        {"classification": classification, "building_info": building_info},
+    )
 
 
 def _resolve_building(classification: dict, profile: Optional[dict]) -> Optional[dict]:
@@ -622,6 +669,7 @@ def _resolve_building(classification: dict, profile: Optional[dict]) -> Optional
 
 
 def validator_gate(state: AgentState) -> dict:
+    t0 = time.perf_counter()
     classification = dict(state["classification"])
     risk = classification.get("risk_level", "LOW")
 
@@ -658,7 +706,13 @@ def validator_gate(state: AgentState) -> dict:
             classification.update(reviewer_input)
             human_override = reviewer_input
 
-    return {"classification": classification, "human_override": human_override}
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state,
+        "validator_gate",
+        dt,
+        {"classification": classification, "human_override": human_override},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -667,6 +721,7 @@ def validator_gate(state: AgentState) -> dict:
 
 
 def vendor_select(state: AgentState) -> dict:
+    t0 = time.perf_counter()
     classification = state["classification"]
     subcategory = classification.get("subcategory", "")
     risk = classification.get("risk_level", "LOW")
@@ -770,11 +825,17 @@ def vendor_select(state: AgentState) -> dict:
         and not classification.get("needs_human_review", False)
     )
 
-    return {
-        "vendor_id": vendor_id,
-        "dispatched_emergency": dispatched_emergency,
-        "classification": updated_classification,
-    }
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state,
+        "vendor_select",
+        dt,
+        {
+            "vendor_id": vendor_id,
+            "dispatched_emergency": dispatched_emergency,
+            "classification": updated_classification,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -783,6 +844,7 @@ def vendor_select(state: AgentState) -> dict:
 
 
 def log_result(state: AgentState) -> dict:
+    t0 = time.perf_counter()
     classification = state["classification"]
     final_decision = {
         "category": classification.get("category"),
@@ -796,7 +858,8 @@ def log_result(state: AgentState) -> dict:
         "dispatched_vendor_id": state.get("vendor_id"),
         "dispatched_emergency_services": state.get("dispatched_emergency", False),
     }
-    return {"final_decision": final_decision}
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(state, "log_result", dt, {"final_decision": final_decision})
 
 
 # ---------------------------------------------------------------------------
@@ -848,6 +911,9 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         caller_phone: phone number string or None for anonymous callers
 
     Returns a prediction dict matching the scoring contract in scoring.py.
+
+    Each row also includes ``_latency`` (wall clock + per-node timings) for dev
+    analysis; strip before official submission if your grader forbids extra keys.
     """
     thread_id = str(uuid.uuid4())
     config = {"configurable": {"thread_id": thread_id}}
@@ -867,8 +933,10 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         "human_override": None,
         "final_decision": None,
         "rag_documents_relevant": None,
+        "node_timings": [],
     }
 
+    wall_t0 = time.perf_counter()
     # First invocation — may pause at validator_gate if needs_human_review
     _GRAPH.invoke(initial_state, config)
 
@@ -877,6 +945,8 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
     graph_state = _GRAPH.get_state(config)
     if graph_state.next:
         _GRAPH.invoke(Command(resume="approved"), config)
+
+    wall_seconds = time.perf_counter() - wall_t0
 
     final_state = _GRAPH.get_state(config).values
     classification = dict(final_state.get("classification") or {})
@@ -891,6 +961,26 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         r"only has \d+ floor", raw_text, re.I
     ):
         classification["needs_clarification"] = True
+
+    timings = list(final_state.get("node_timings") or [])
+    by_node: Dict[str, float] = {}
+    for ev in timings:
+        name = ev.get("node") or "unknown"
+        by_node[name] = by_node.get(name, 0.0) + float(ev.get("seconds") or 0.0)
+
+    sum_timed_nodes = sum(by_node.values())
+
+    latency_payload = {
+        "wall_clock_seconds": round(wall_seconds, 4),
+        "sum_timed_nodes_seconds": round(sum_timed_nodes, 4),
+        "wall_minus_sum_nodes": round(wall_seconds - sum_timed_nodes, 4),
+        "node_timings": timings,
+        "seconds_by_node": {k: round(v, 4) for k, v in sorted(by_node.items())},
+        "grader_gate_visits": sum(1 for e in timings if e.get("node") == "grader_gate"),
+        "rewrite_rag_query_visits": sum(1 for e in timings if e.get("node") == "rewrite_rag_query"),
+        "rag_retrieve_visits": sum(1 for e in timings if e.get("node") == "rag_retrieve"),
+        "final_rag_rewrite_count": final_state.get("rag_rewrite_count") or 0,
+    }
 
     return {
         "category":                     classification.get("category", ""),
@@ -910,4 +1000,5 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
             "human_override":  final_state.get("human_override"),
             "final_decision":  final_state.get("final_decision") or {},
         },
+        "_latency": latency_payload,
     }
