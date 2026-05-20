@@ -27,12 +27,16 @@ It must return a dict with the fields scoring.py expects:
     dispatched_emergency_services, call_summary, trainer_log
 
 Missing fields → scoring.py will count as incorrect for those axes.
+
+Agents may attach ``_latency`` (e.g. ``cbre_agent.agent``) — when present, a
+short aggregate summary is printed after the run.
 """
 from __future__ import annotations
 
 import argparse
 import importlib
 import json
+import statistics
 import sys
 import time
 import traceback
@@ -108,6 +112,49 @@ def run(agent: Callable[..., Dict[str, Any]],
     return preds
 
 
+def print_latency_aggregate(preds: List[dict]) -> None:
+    """When predictions include ``_latency`` from the agent, print mean/median wall time and per-node means."""
+    rows: List[Dict[str, Any]] = []
+    for p in preds:
+        if not isinstance(p, dict) or "error" in p:
+            continue
+        L = p.get("_latency")
+        if isinstance(L, dict) and "wall_clock_seconds" in L:
+            rows.append(L)
+    if not rows:
+        print(
+            "\nLatency: no `_latency` field on predictions "
+            "(instrumented agents add this for per-node breakdown)."
+        )
+        return
+
+    walls = [float(r["wall_clock_seconds"]) for r in rows]
+    n = len(rows)
+    mean_w = statistics.mean(walls)
+    med_w = statistics.median(walls)
+
+    with_rewrite = sum(1 for r in rows if int(r.get("rewrite_rag_query_visits") or 0) > 0)
+    grader_visits = [int(r.get("grader_gate_visits") or 0) for r in rows]
+
+    node_names = sorted({k for r in rows for k in (r.get("seconds_by_node") or {})})
+    node_means: Dict[str, float] = {}
+    for name in node_names:
+        vals = [(r.get("seconds_by_node") or {}).get(name, 0.0) for r in rows]
+        node_means[name] = statistics.mean(vals)
+
+    print("\n--- Latency aggregate (`_latency` on predictions) ---")
+    print(f"  transcripts:              {n}")
+    print(f"  wall_clock mean / median: {mean_w:.3f}s / {med_w:.3f}s")
+    print(f"  grader_gate visits/call:  mean {statistics.mean(grader_visits):.2f}  (max {max(grader_visits)})")
+    print(f"  calls with ≥1 rewrite:    {with_rewrite} ({100.0 * with_rewrite / n:.1f}%)")
+    print("  mean seconds_by_node (summed per call, then averaged across calls):")
+    for name in sorted(node_means, key=lambda k: -node_means[k]):
+        tag = ""
+        if name in ("grader_gate", "rewrite_rag_query"):
+            tag = "  ← RAG gate / rewrite loop"
+        print(f"    {name:22s} {node_means[name]:.3f}s{tag}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--agent", required=True,
@@ -131,6 +178,7 @@ def main():
                 verbose=args.verbose, timeout_s=args.timeout_s)
     Path(args.out).write_text(json.dumps(preds, indent=2))
     print(f"Wrote {len(preds)} predictions → {args.out}")
+    print_latency_aggregate(preds)
 
 
 if __name__ == "__main__":
