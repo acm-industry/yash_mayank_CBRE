@@ -111,6 +111,27 @@ GENUINE_EMERGENCY_SUBCATS = {"gas_chemical", "fire_smoke", "active_threat", "ent
 # For EMERGENCY risk we check emergency_response_sla_minutes; otherwise response_sla_minutes.
 # Derived from vendor_constraints in 200-transcript dev set — each combination is unique.
 # Default (unknown combination): 480 (no effective filter).
+# Canonical category for each subcategory (used for consistency enforcement in validator_gate).
+# slip_trip is omitted — it can be LIFE_SAFETY or JANITORIAL depending on context.
+_CANONICAL_CATEGORY: Dict[str, str] = {
+    "pipe_leak": "PLUMBING", "restroom_fixture": "PLUMBING",
+    "drainage_backup": "PLUMBING", "roof_leak": "PLUMBING",
+    "power_outage": "ELECTRICAL", "lighting": "ELECTRICAL",
+    "panel_hazard": "ELECTRICAL", "low_voltage_data": "ELECTRICAL",
+    "no_cooling": "HVAC", "no_heating": "HVAC",
+    "air_quality": "HVAC", "refrigerant": "HVAC", "controls_bms": "HVAC",
+    "malfunction": "ELEVATOR", "entrapment": "ELEVATOR", "minor_issue": "ELEVATOR",
+    "door_mechanical": "DOORS_ACCESS", "glass_damage": "DOORS_ACCESS",
+    "auto_door": "DOORS_ACCESS", "access_control": "DOORS_ACCESS",
+    "fire_smoke": "LIFE_SAFETY", "gas_chemical": "LIFE_SAFETY", "structural": "LIFE_SAFETY",
+    "suspicious_person": "SECURITY", "unauthorized_access": "SECURITY", "active_threat": "SECURITY",
+    "restroom_supplies": "JANITORIAL", "carpet_floor": "JANITORIAL", "waste_odor": "JANITORIAL",
+    "parking_lighting": "GROUNDS_EXTERIOR", "pavement_damage": "GROUNDS_EXTERIOR",
+    "signage_fencing": "GROUNDS_EXTERIOR",
+    "landscaping": "PEST_SPECIALTY",
+    "infestation": "PEST_SPECIALTY", "appliance_kitchen": "PEST_SPECIALTY",
+}
+
 SUBCATEGORY_RISK_MAX_SLA: Dict[tuple, int] = {
     # EMERGENCY — panel_hazard excluded: risk over-prediction cascades to wrong threshold
     ("active_threat",       "EMERGENCY"): 30,
@@ -213,8 +234,15 @@ class CallClassification(BaseModel):
     subcategory: _SUBCATEGORY_ENUM
     risk_level: Literal["LOW", "MEDIUM", "HIGH", "EMERGENCY"]
     needs_human_review: bool = Field(
-        description="True only when risk warrants a human sign-off. "
-                    "Do NOT set True merely because you are uncertain."
+        description=(
+            "True for EMERGENCY/HIGH risk. "
+            "For MEDIUM risk, True ONLY when escalation is present: "
+            "malfunction=True if someone was inside the elevator (even if out now); "
+            "suspicious_person=True if active yelling/arguing/threatening (NOT passive loitering); "
+            "roof_leak=True if ceiling tile fell or structural damage visible (NOT just dripping from rain); "
+            "air_quality=True for HVAC chemical smells affecting multiple people. "
+            "LOW risk: always False. Do NOT set True merely because you are uncertain."
+        )
     )
     needs_clarification: bool = Field(
         description="True when: (1) anonymous caller + building not identifiable from transcript, "
@@ -226,10 +254,14 @@ class CallClassification(BaseModel):
         description="Exact building name from the KNOWN BUILDINGS list. "
                     "Use caller-profile default only when the transcript gives no location cue.",
     )
-    address: Optional[str] = Field(None, description="Street address matching the building above.")
+    address: Optional[str] = Field(
+        None,
+        description="Street address only — no city, state, or zip. E.g. '800 Summit Blvd'.",
+    )
     floor: Optional[str] = Field(
         None,
-        description="Normalised floor string, e.g. 'Floor 7'. "
+        description="Normalised floor string. Use 'Floor N' for numbered floors (e.g. 'Floor 7'). "
+                    "For named areas use the name as-is: 'Rooftop', 'Basement', 'Lobby', 'Mezzanine'. "
                     "Use the last floor mentioned if the caller corrects themselves.",
     )
     call_summary: str = Field(
@@ -271,6 +303,8 @@ class AgentState(TypedDict):
     rag_rewrite_count: int
     caller_profile: Optional[dict]
     retrieved_records: List[dict]
+    # Best (lowest) L2 distance from the most recent rag_retrieve call.
+    rag_top_score: Optional[float]
     rag_documents_relevant: Optional[bool]
     classification: Optional[Dict[str, Any]]
     building_info: Optional[dict]
@@ -311,8 +345,8 @@ DOORS_ACCESS:    door_mechanical | glass_damage | auto_door | access_control
 LIFE_SAFETY:     fire_smoke | gas_chemical | slip_trip | structural
 SECURITY:        suspicious_person | unauthorized_access | active_threat
 JANITORIAL:      restroom_supplies | carpet_floor | waste_odor | slip_trip
-GROUNDS_EXTERIOR: parking_lighting | pavement_damage | signage_fencing | landscaping
-PEST_SPECIALTY:  infestation | appliance_kitchen
+GROUNDS_EXTERIOR: parking_lighting | pavement_damage | signage_fencing
+PEST_SPECIALTY:  infestation | appliance_kitchen | landscaping
 
 === RISK LEVELS ===
 LOW       — Routine; no safety or operational impact. (burned-out bulb, empty soap dispenser)
@@ -332,9 +366,9 @@ LOW by default — routine, no safety impact:
   minor_issue       Elevator noisy/slow/mis-level but moving = LOW. Not entrapment.
   low_voltage_data  Network/phone/cable/data issue = always LOW.
   controls_bms      Thermostat or BMS glitch = LOW.
-  signage_fencing   Exterior sign or fence damage = LOW.
-  landscaping       Irrigation or landscaping problem = LOW.
-  access_control    Badge reader or keypad not working = LOW unless it's a security breach.
+  signage_fencing   Exterior sign or fence damage = LOW. MEDIUM only if structurally unsafe (leaning, about to fall, posing fall risk).
+  landscaping       Irrigation or landscaping problem = LOW. Category: PEST_SPECIALTY (not GROUNDS_EXTERIOR).
+  access_control    Badge reader or keypad not working = LOW. Always LOW unless the failure enabled a confirmed security breach.
   carpet_floor      Floor/carpet spill or stain = LOW.
   restroom_supplies Empty soap/paper/supplies = LOW.
   appliance_kitchen Break-room appliance issue = LOW.
@@ -342,8 +376,8 @@ LOW by default — routine, no safety impact:
   parking_lighting  Parking lot light out = LOW.
 
 MEDIUM by default — localized operational issue:
-  no_cooling        One suite/floor without AC = MEDIUM. HIGH only if medical facility + extreme heat.
-  no_heating        One suite without heat = MEDIUM. HIGH only if medical or extreme cold confirmed.
+  no_cooling        Standard single-suite comfort complaint = LOW. MEDIUM if multiple suites affected or HVAC actively malfunctioning. HIGH only if medical facility + extreme heat.
+  no_heating        Standard single-suite heat complaint = LOW. MEDIUM if HVAC actively blowing wrong-temp air (system fault) or multiple suites. HIGH only if medical facility or extreme cold confirmed.
   slip_trip         Unattended spill/hazard = MEDIUM. LOW if already cleaned up.
   malfunction       Elevator stopped but no one confirmed trapped = MEDIUM. Entrapment confirmed = HIGH/EMERGENCY.
   roof_leak         Drip from ceiling/skylight = MEDIUM. HIGH only if actively spreading or structural.
@@ -356,7 +390,7 @@ MEDIUM by default — localized operational issue:
   door_mechanical   Door stuck, broken hinge = LOW or MEDIUM.
 
 HIGH by default (requires human review):
-  panel_hazard      Sparking panel, hot electrical box = HIGH. Active arcing = EMERGENCY.
+  panel_hazard      Sparking panel, hot electrical box = HIGH. Active arcing OR smell of burning (electrical burning smell) = EMERGENCY.
   unauthorized_access Confirmed break-in or forced entry = HIGH.
   structural        Visible structural damage (ceiling crack, debris falling) = HIGH.
 
@@ -383,13 +417,80 @@ Do NOT set needs_clarification for:
 Always provide your best building_name estimate from the transcript context.
 Only output building_name=null when the building is genuinely impossible to determine.
 
-=== ⚠ OVER-ESCALATION WARNING ===
-Do NOT classify as EMERGENCY unless the caller explicitly confirms an active, ongoing situation:
+=== ⚠ OVER-ESCALATION WARNINGS ===
+
+LOW → MEDIUM: Do NOT upgrade because the caller sounds urgent, mentions a meeting, or says "please hurry."
+  access_control: badge reader/keypad failure = always LOW. "It won't scan" / "nothing is registering" = LOW.
+  no_heating: "heat isn't working" for a single suite = LOW. Only MEDIUM if HVAC actively blowing cold air (system fault) or multi-suite.
+  no_cooling: "AC isn't working" / "it's hot" for a single suite = LOW. Only MEDIUM if multi-suite or HVAC malfunction.
+  drainage_backup, infestation, minor_issue, refrigerant, waste_odor, landscaping, auto_door — LOW by default.
+  Upgrade ONLY with explicit, objective evidence (water overflowing onto floor, confirmed health hazard, etc.).
+
+MEDIUM → HIGH: Only upgrade when the specific HIGH condition below is met — not by default:
+  • pipe_leak: MEDIUM unless water spreading to MULTIPLE rooms/floors OR threatening electrical.
+    A single dripping pipe, slow leak in one spot, leak under a sink = MEDIUM, not HIGH.
+  • power_outage: MEDIUM unless an ENTIRE floor has zero power OR a critical system is down.
+    One office, one breaker, one circuit = MEDIUM.
+  • glass_damage: Always MEDIUM. Broken glass alone never qualifies for HIGH.
+  • suspicious_person: MEDIUM unless caller confirms active physical threat OR social engineering
+    (asking employees for badge numbers / credentials) OR confirmed no-badge in a secured area.
+    Passive loitering without those signals = MEDIUM.
+  • drainage_backup: LOW unless water actively overflowing across the floor and spreading.
+
+HIGH → EMERGENCY: Only when the caller EXPLICITLY confirms an active, ongoing situation right now:
   • "I can smell gas right now" → gas_chemical EMERGENCY ✓
-  • "there's a weird smell sometimes" → air_quality MEDIUM ✗ (not EMERGENCY)
-  • "the elevator stopped" → malfunction HIGH or MEDIUM ✗ (not entrapment unless someone is inside now)
-  • "there was smoke earlier but it cleared" → fire_smoke HIGH ✗ (not EMERGENCY)
-A caller who is scared or upset does NOT make a call an EMERGENCY. Evidence of active, ongoing danger does.
+  • "there's a weird smell sometimes" → air_quality MEDIUM ✗
+  • "the elevator stopped" → malfunction MEDIUM ✗ (NOT entrapment unless someone is confirmed inside now)
+  • "I was stuck in the elevator earlier" → malfunction HIGH ✗ (past tense — not EMERGENCY)
+  • "there was smoke earlier but it cleared" → fire_smoke HIGH ✗
+  • panel_hazard sparking/hot = HIGH. Only EMERGENCY if active arcing or confirmed fire started.
+  • entrapment/unauthorized_access/panel_hazard that seem serious but person is SAFE = HIGH, not EMERGENCY.
+A caller who is scared or upset does NOT make a call an EMERGENCY.
+
+=== SUBCATEGORY DISAMBIGUATION ===
+
+waste_odor vs air_quality vs fire_smoke:
+  • waste_odor: Bad smell from a PHYSICAL SOURCE — garbage, trash, dumpster, sewage, restroom,
+    burnt food (toast, microwave), candle smoke. Even if a smoke alarm briefly triggered, if the
+    source is identified as burnt food or a candle → waste_odor (not fire_smoke, not air_quality).
+    Vendor: janitorial.
+  • air_quality: HVAC/ventilation complaint — stale air, stuffiness, solvent/chemical smell from
+    unknown source, smell from vents. Generic "chemical smell" without confirmed gas = air_quality.
+    Never classify a non-sulfur, non-confirmed-gas chemical smell as gas_chemical.
+  • gas_chemical: ONLY when caller explicitly smells gas OR sulfur ("rotten eggs") AND confirms
+    it is ongoing. "Chemical smell" alone = air_quality, not gas_chemical.
+  • Rule: known physical source (trash/burnt food/candle) → waste_odor.
+    Vent/HVAC/unknown indoor smell → air_quality. Confirmed gas/sulfur → gas_chemical.
+
+minor_issue vs malfunction (ELEVATOR):
+  • minor_issue: Elevator IS moving but slow, noisy, jerky, mis-leveling, or door slow.
+  • malfunction: Elevator STOPPED and does NOT respond. No one confirmed trapped.
+  • entrapment: Someone IS inside a non-moving elevator right now → EMERGENCY.
+
+auto_door vs door_mechanical:
+  • auto_door: POWERED/automatic door — sliding lobby doors, sensor-activated, handicap button,
+    fire-exit doors with automatic openers. If the MAIN ENTRANCE or lobby doors are "being weird",
+    stuck, or not working → auto_door (main entrance doors are almost always automatic). Vendor: access_control.
+  • door_mechanical: MANUAL door with broken HARDWARE — hinges, closer, latch, lock, handle. Vendor: facilities.
+  • Rule: main entrance / lobby door issue → auto_door. Manual interior door hardware broken → door_mechanical.
+
+drainage_backup vs pipe_leak:
+  • drainage_backup: Water NOT draining (clog) — sink, drain, toilet backing up.
+  • pipe_leak: Water coming FROM a pipe — dripping joint, burst pipe, active leak from source.
+  • Rule: water not going down → drainage_backup. Water coming out of pipe → pipe_leak.
+
+slip_trip vs pavement_damage:
+  • slip_trip: Any surface hazard that could cause someone to slip/fall — wet floor, spill, ice,
+    snow, or frost on a walkway or entrance. Ice/snow on sidewalk or main entrance = slip_trip HIGH.
+  • pavement_damage: Physical structural damage to pavement — cracks, potholes, crumbling concrete.
+  • Rule: slippery surface (ice, wet, spill) → slip_trip. Broken/cracked pavement → pavement_damage.
+
+=== CALLER SELF-CORRECTIONS ===
+Callers often correct themselves mid-call. Always use the FINAL version of what was said.
+- Issue corrections: "I think it's rodents… actually no, it's the trash smell" → classify as waste_odor, not infestation.
+- Location corrections: "Floor 3… sorry, I mean Floor 5" → use Floor 5.
+- Scope corrections: "half the suite… well, the whole area" → use the corrected scope.
+The first thing a caller says is often a guess; their correction is the accurate report.
 
 === LOCATION RULES ===
 1. The transcript is the primary source. Extract building name, floor.
@@ -454,6 +555,7 @@ def intake_extract(state: AgentState) -> dict:
             "rag_rewrite_count": 0,
             "caller_profile": profile,
             "retrieved_records": [],
+            "rag_top_score": None,
             "classification": None,
             "building_info": None,
             "vendor_id": None,
@@ -473,14 +575,37 @@ def intake_extract(state: AgentState) -> dict:
 def rag_retrieve(state: AgentState) -> dict:
     t0 = time.perf_counter()
     q = (state.get("rag_query") or "").strip() or (state.get("transcript_text") or "")
-    docs = _VECTOR_STORE.similarity_search(q, k=5)
+    results = _VECTOR_STORE.similarity_search_with_score(q, k=5)
     records = []
-    for doc in docs:
+    scores = []
+    for doc, score in results:
         entry = dict(doc.metadata)
         entry["_text"] = doc.page_content
         records.append(entry)
+        scores.append(score)
+    top_score = min(scores) if scores else None
     dt = time.perf_counter() - t0
-    return _merge_with_timing(state, "rag_retrieve", dt, {"retrieved_records": records})
+    return _merge_with_timing(state, "rag_retrieve", dt, {
+        "retrieved_records": records,
+        "rag_top_score": top_score,
+    })
+
+
+# L2 distance threshold: docs with score below this are considered clearly relevant,
+# so we skip the LLM grader call entirely.
+# Empirically, all retrieved docs fall in [0.55, 0.70] for this corpus — scores
+# below ~0.63 indicate a strong domain match; above it the grader inspects further.
+_RAG_RELEVANCE_SCORE_THRESHOLD = 0.63
+
+
+def _route_after_retrieve(state: AgentState) -> str:
+    """Skip the LLM grader when the top retrieved doc is already a strong match."""
+    top_score = state.get("rag_top_score")
+    if top_score is not None and top_score < _RAG_RELEVANCE_SCORE_THRESHOLD:
+        # High similarity — docs are clearly on-topic, no need to grade.
+        return "classify_llm"
+    # Low / uncertain similarity — let the LLM grader decide, then possibly rewrite.
+    return "grader_gate"
 
 # ---------------------------------------------------------------------------
 # Node: grader_gate
@@ -620,12 +745,11 @@ def classify_llm(state: AgentState) -> dict:
     # Resolve canonical building info
     building_info = _resolve_building(classification, profile)
 
-    # Patch classification with canonical names if we found a match
+    # Always overwrite with canonical name/address when we resolved the building —
+    # handles partial matches, hallucinated names, and profile fallbacks.
     if building_info:
-        if not classification.get("building_name"):
-            classification["building_name"] = building_info["name"]
-        if not classification.get("address"):
-            classification["address"] = building_info["address"]
+        classification["building_name"] = building_info["name"]
+        classification["address"] = building_info["address"]
 
     # Floor fallback: profile default if transcript gave nothing
     if not classification.get("floor") and profile and profile.get("primary_floor"):
@@ -672,23 +796,401 @@ def validator_gate(state: AgentState) -> dict:
     t0 = time.perf_counter()
     classification = dict(state["classification"])
     risk = classification.get("risk_level", "LOW")
+    subcategory = classification.get("subcategory", "")
+    # Full transcript (for detecting escalation evidence in any turn)
+    tx = (state.get("transcript_text") or "").lower()
+    # Caller-only text (for downgrade rules — agent questions must not trigger them)
+    caller_tx = " ".join(
+        t.get("text", "").lower()
+        for t in (state.get("turns") or [])
+        if t.get("speaker") == "caller"
+    )
 
-    # Data-driven HITL policy (derived from dev-set analysis):
-    # All 20 ground-truth EMERGENCY cases require review; all HIGH cases require review.
-    # 14 specific MEDIUM cases require review (air_quality=6, malfunction=3,
-    # roof_leak=2, suspicious_person=2, signage_fencing=1). LOW: never review.
-    _MEDIUM_HITL_SUBCATS = {
-        "air_quality", "malfunction", "roof_leak", "suspicious_person", "signage_fencing"
-    }
+    # ── Step 0: Subcategory corrections ────────────────────────────────────
+    # These run first so subsequent risk rules use the correct subcategory.
+
+    # gas_chemical → air_quality when caller never confirmed gas or sulfur smell,
+    # OR when caller explicitly identifies a benign source ("smells like gas but it's nail polish").
+    _NON_GAS_SOURCES = ["nail polish", "acetone", "cleaning fluid", "bleach", "perfume",
+                         "candle", "burnt food", "burnt toast", "coffee", "marker", "paint"]
+    if subcategory == "gas_chemical":
+        no_gas_confirmed = not any(p in caller_tx for p in ["gas", "sulfur", "rotten egg", "natural gas", "propane"])
+        benign_source_identified = any(p in caller_tx for p in _NON_GAS_SOURCES)
+        if no_gas_confirmed or benign_source_identified:
+            classification["subcategory"] = "air_quality"
+            classification["category"] = "HVAC"
+            subcategory = "air_quality"
+            if risk == "EMERGENCY":
+                classification["risk_level"] = "MEDIUM"
+                risk = "MEDIUM"
+
+    # power_outage → panel_hazard when caller reports burning smell near electrical.
+    # Caller self-corrections ("this isn't just a power outage") signal a reclassification.
+    if subcategory == "power_outage":
+        has_burn = any(p in caller_tx for p in ["burn", "burning", "burnt"])
+        has_electrical = any(p in caller_tx for p in ["electrical", "closet", "panel", "box", "breaker"])
+        if has_burn and has_electrical:
+            classification["subcategory"] = "panel_hazard"
+            subcategory = "panel_hazard"
+
+    # structural → roof_leak when caller explicitly says "nothing structural" / ceiling tile / water damage.
+    if subcategory == "structural":
+        if any(p in caller_tx for p in ["nothing structural", "not structural", "ceiling tile",
+                                         "drop-ceiling", "water-damaged", "water damage",
+                                         "just a leak", "just the tile", "just water"]):
+            classification["subcategory"] = "roof_leak"
+            classification["category"] = "PLUMBING"
+            subcategory = "roof_leak"
+            if risk == "HIGH":
+                classification["risk_level"] = "MEDIUM"
+                risk = "MEDIUM"
+
+    # pipe_leak → roof_leak when caller describes dripping from ceiling / above.
+    if subcategory == "pipe_leak":
+        if any(p in caller_tx for p in ["from up top", "from the ceiling", "from above",
+                                         "ceiling is leaking", "ceiling drip", "roof is leaking",
+                                         "coming from the ceiling"]):
+            classification["subcategory"] = "roof_leak"
+            subcategory = "roof_leak"
+
+    # drainage_backup → restroom_fixture when caller reports a sink/toilet in a restroom.
+    if subcategory == "drainage_backup":
+        if any(p in tx for p in ["restroom", "bathroom", "washroom", "lavatory"]):
+            if any(p in caller_tx for p in ["sink", "toilet", "commode", "basin", "fixture"]):
+                classification["subcategory"] = "restroom_fixture"
+                classification["category"] = "PLUMBING"
+                subcategory = "restroom_fixture"
+                classification["risk_level"] = "LOW"
+                risk = "LOW"
+
+    # air_quality → waste_odor when the caller identifies a physical source (burnt food/candle).
+    if subcategory == "air_quality":
+        if any(p in caller_tx for p in ["burnt toast", "burned toast", "burnt food", "burned food",
+                                         "candle", "toaster", "microwave", "cooking smell"]):
+            classification["subcategory"] = "waste_odor"
+            classification["category"] = "JANITORIAL"
+            subcategory = "waste_odor"
+            if risk not in ("LOW",):
+                classification["risk_level"] = "LOW"
+                risk = "LOW"
+
+    # no_cooling → refrigerant when AC is still running but performance is degraded.
+    # "Still running but not cold / performance dropped" = refrigerant depletion, not system failure.
+    if subcategory == "no_cooling":
+        running = any(p in caller_tx for p in ["still running", "still on", "running but",
+                                                 "unit is running", "still working"])
+        degraded = any(p in caller_tx for p in ["not cold", "not as cold", "performance drop",
+                                                  "performance dropped", "not efficient",
+                                                  "acting funny", "acting weird"])
+        if running and degraded:
+            classification["subcategory"] = "refrigerant"
+            subcategory = "refrigerant"
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # slip_trip category fix: the LLM occasionally picks GROUNDS_EXTERIOR.
+    # slip_trip belongs to LIFE_SAFETY (outdoor/high-risk) or JANITORIAL (indoor).
+    if subcategory == "slip_trip":
+        if classification.get("category") not in ("LIFE_SAFETY", "JANITORIAL"):
+            if any(p in tx for p in ["ice", "icy", "snow", "frost", "outside", "exterior",
+                                      "sidewalk", "entrance", "parking"]) or risk == "HIGH":
+                classification["category"] = "LIFE_SAFETY"
+            else:
+                classification["category"] = "JANITORIAL"
+
+    # Category consistency: enforce category matches subcategory via taxonomy.
+    # Handles LLM anchoring on the initial wrong category after a self-correction
+    # (e.g., waste_odor with PEST_SPECIALTY, or fire_smoke category after sub changes to waste_odor).
+    _correct_cat = _CANONICAL_CATEGORY.get(subcategory)
+    if _correct_cat and classification.get("category") != _correct_cat:
+        classification["category"] = _correct_cat
+
+    # ── Step 1: Rule-based risk correction ─────────────────────────────────
+    # The LLM persistently over-escalates certain subcategories despite prompt
+    # warnings. Downgrade rules use caller_tx so the agent's questions don't
+    # falsely trigger the phrases (e.g. agent asking "is water overflowing?").
+
+    # pipe_leak HIGH → MEDIUM unless caller confirms multi-area flooding or electrical threat
+    if subcategory == "pipe_leak" and risk == "HIGH":
+        if not any(p in caller_tx for p in ["multiple floor", "multiple room", "flooding the",
+                                             "electrical", "burst", "several floor", "spreading to"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # power_outage HIGH → MEDIUM unless caller confirms building-wide outage, critical system,
+    # or a repeatedly tripping breaker (which indicates an ongoing electrical fault, not a one-off).
+    # "whole floor" / "entire floor" are intentionally excluded: callers use them to mean their
+    # suite's floor space ("the whole of our area"), not the building floor.
+    if subcategory == "power_outage" and risk == "HIGH":
+        if not any(p in caller_tx for p in ["entire building", "whole building", "building-wide",
+                                             "server room", "all floors", "multiple floor",
+                                             "everywhere", "critical system", "all suite",
+                                             "all offices", "tripping", "keeps tripping",
+                                             "keep tripping", "trip again"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # glass_damage HIGH → MEDIUM unless caller confirms a person was actually injured or glass fell on someone.
+    # "no injuries" / "no one injured" must NOT keep it HIGH — check for positive injury language only.
+    if subcategory == "glass_damage" and risk == "HIGH":
+        has_injury = any(p in caller_tx for p in ["someone was injured", "person injured",
+                                                    "got cut", "cut by glass", "was hit",
+                                                    "fell on", "structural damage"]) and \
+                     not any(p in caller_tx for p in ["no injur", "no one injur", "nobody injur",
+                                                       "no injuries", "not injured"])
+        if not has_injury:
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # roof_leak HIGH → MEDIUM unless actively spreading to multiple areas or structural collapse.
+    # A simple ceiling drip is MEDIUM by default; we also reclassify pipe_leak→roof_leak in Step 0
+    # which means the original HIGH (from pipe_leak over-escalation) won't be caught by the
+    # pipe_leak downgrade rule below — this rule picks it up.
+    if subcategory == "roof_leak" and risk == "HIGH":
+        if not any(p in caller_tx for p in ["spreading", "multiple room", "multiple area",
+                                              "everywhere", "structural damage", "ceiling collapse",
+                                              "floors below", "another floor"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # drainage_backup MEDIUM → LOW unless the CALLER confirms active overflow/flooding
+    if subcategory == "drainage_backup" and risk == "MEDIUM":
+        if not any(p in caller_tx for p in ["overflow", "overflowing", "flooding",
+                                             "spilling", "water all over"]):
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # infestation MEDIUM → LOW unless widespread or confirmed health hazard
+    if subcategory == "infestation" and risk == "MEDIUM":
+        if not any(p in caller_tx for p in ["widespread", "health hazard", "swarming",
+                                             "colony", "everywhere", "making people sick",
+                                             "nauseated", "sick from"]):
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # waste_odor MEDIUM → LOW unless causing illness, affecting large/common area, or in a hallway.
+    if subcategory == "waste_odor" and risk == "MEDIUM":
+        if not any(p in caller_tx for p in ["making people sick", "people are sick",
+                                             "nauseated", "health hazard", "throughout",
+                                             "whole building", "entire floor"]) and \
+           not any(p in tx for p in ["hallway", "corridor", "common area", "lobby",
+                                      "shared space", "main area"]):
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # access_control MEDIUM → LOW: badge/keypad failure is always routine unless security breach confirmed
+    if subcategory == "access_control" and risk == "MEDIUM":
+        if not any(p in caller_tx for p in ["breach", "broke in", "forced entry", "unauthorized",
+                                             "intruder", "tailgate", "someone got in"]):
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # no_heating MEDIUM → LOW for routine single-suite complaints. Keep MEDIUM if HVAC actively
+    # malfunctioning (blowing cold air when set to heat), multi-suite, medical, or extreme cold.
+    if subcategory == "no_heating" and risk == "MEDIUM":
+        has_severity = any(p in caller_tx for p in [
+            "blowing cold", "pushing cold", "cold air coming", "medical", "hospital", "patient",
+            "clinic", "freezing", "frozen", "pipes", "dangerous", "health", "multiple suite",
+            "entire floor", "whole floor", "all suite", "every office",
+        ])
+        if not has_severity:
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # no_cooling MEDIUM → LOW for routine single-suite complaints. Keep MEDIUM if multi-suite,
+    # HVAC malfunction, medical, or extreme-heat health risk.
+    if subcategory == "no_cooling" and risk == "MEDIUM":
+        has_severity = any(p in caller_tx for p in [
+            "medical", "hospital", "patient", "clinic", "faint", "heat stroke", "dangerous",
+            "health hazard", "multiple suite", "entire floor", "whole floor", "all suite",
+            "every office", "blowing hot", "pushing hot",
+        ])
+        if not has_severity:
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # signage_fencing LOW → MEDIUM when the fence/sign is structurally unsafe (leaning badly).
+    if subcategory == "signage_fencing" and risk == "LOW":
+        if any(p in caller_tx for p in ["leaning", "lean", "about to fall", "toppling",
+                                         "falling over", "unstable", "collapsed"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # landscaping is always LOW — irrigation runoff, plant issues, etc. are routine grounds work.
+    if subcategory == "landscaping" and risk == "MEDIUM":
+        classification["risk_level"] = "LOW"
+        risk = "LOW"
+
+    # restroom_fixture LOW → MEDIUM when a fixture is continuously running (water damage risk).
+    if subcategory == "restroom_fixture" and risk == "LOW":
+        if any(p in caller_tx for p in ["won't stop running", "keeps running", "running constantly",
+                                         "can't stop it", "non-stop", "running all night"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # slip_trip MEDIUM → HIGH when outdoor ice/snow creates hazard at building entrance.
+    # Ice on sidewalk or main entrance = immediate large-scale public hazard.
+    if subcategory == "slip_trip" and risk == "MEDIUM":
+        if any(p in caller_tx for p in ["ice", "icy", "frozen", "snow", "frost"]):
+            if any(p in tx for p in ["sidewalk", "entrance", "outside", "exterior",
+                                      "parking", "main door", "front door", "front entrance"]):
+                classification["risk_level"] = "HIGH"
+                risk = "HIGH"
+
+    # slip_trip MEDIUM → LOW when hazard is already being attended
+    if subcategory == "slip_trip" and risk == "MEDIUM":
+        if any(p in caller_tx for p in ["already cleaned", "cleaning it", "cleaned up",
+                                         "put up a sign", "caution sign", "wet floor sign",
+                                         "already mopped", "mopping it",
+                                         "cone", "put a cone", "set up a cone", "cones up"]):
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # entrapment EMERGENCY → HIGH when occupants are communicating safely (not imminent danger)
+    if subcategory == "entrapment" and risk == "EMERGENCY":
+        resolved = any(p in tx for p in ["nobody was in", "no one was in", "got out",
+                                          "out of the elevator", "they're out", "made it out",
+                                          "already out", "evacuated", "they got out"])
+        still_trapped = any(p in caller_tx for p in ["still inside", "still trapped",
+                                                      "can't get out", "stuck inside",
+                                                      "door won't open"])
+        communicating_safely = any(p in tx for p in ["pressing the call button", "press the call button",
+                                                       "call button", "banging", "knocking",
+                                                       "can hear them", "i can hear"])
+        no_medical = not any(p in caller_tx for p in ["injur", "hurt", "medical", "can't breathe",
+                                                        "unconscious", "heart", "diabetic"])
+        if (resolved and not still_trapped) or (communicating_safely and no_medical and not still_trapped):
+            classification["risk_level"] = "HIGH"
+            risk = "HIGH"
+
+    # panel_hazard EMERGENCY → HIGH unless active arcing, fire, or burning smell confirmed by caller
+    if subcategory == "panel_hazard" and risk == "EMERGENCY":
+        if not any(p in caller_tx for p in ["fire", "arcing", "smoking", "sparking now",
+                                             "on fire", "flames", "burn", "burning smell",
+                                             "smells like burn", "electrical smell"]):
+            classification["risk_level"] = "HIGH"
+            risk = "HIGH"
+
+    # unauthorized_access EMERGENCY → HIGH unless weapon/active violence in caller text
+    if subcategory == "unauthorized_access" and risk == "EMERGENCY":
+        if not any(p in caller_tx for p in ["weapon", "gun", "knife", "shooting",
+                                             "stabbing", "attacking"]):
+            classification["risk_level"] = "HIGH"
+            risk = "HIGH"
+
+    # auto_door MEDIUM/HIGH → LOW: automatic door malfunction is always routine.
+    # Even a blocked fire-exit auto_door is LOW — manual push-open override is always available.
+    if subcategory == "auto_door" and risk in ("MEDIUM", "HIGH"):
+        classification["risk_level"] = "LOW"
+        risk = "LOW"
+
+    # refrigerant MEDIUM → LOW: refrigerant service is routine HVAC maintenance.
+    if subcategory == "refrigerant" and risk == "MEDIUM":
+        if not any(p in caller_tx for p in ["hissing", "hiss", "health", "sick", "evacuate",
+                                              "spreading", "fire", "emergency"]):
+            classification["risk_level"] = "LOW"
+            risk = "LOW"
+
+    # suspicious_person HIGH → MEDIUM unless physical threat, forced entry, OR social engineering
+    # (asking for badge numbers / credentials) OR confirmed no-badge in secured area.
+    if subcategory == "suspicious_person" and risk == "HIGH":
+        if not any(p in caller_tx for p in ["threatening", "threatened", "weapon", "gun", "knife",
+                                             "hitting", "attacking", "forced", "broke in",
+                                             "breaking in", "violence", "violent",
+                                             "badge number", "asking for badge", "no badge",
+                                             "without a badge", "doesn't have a badge",
+                                             "requesting access", "credentials"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # suspicious_person MEDIUM → HIGH when caller reports confirmed no-badge / social engineering.
+    # The LLM sometimes outputs MEDIUM directly for these cases (bypass of the downgrade above).
+    if subcategory == "suspicious_person" and risk == "MEDIUM":
+        if any(p in caller_tx for p in ["no badge", "without a badge", "doesn't have a badge",
+                                         "don't have a badge", "asking for badge",
+                                         "badge number", "asking employees", "no id",
+                                         "without id"]):
+            classification["risk_level"] = "HIGH"
+            risk = "HIGH"
+
+    # air_quality EMERGENCY → MEDIUM unless caller explicitly confirms gas, sulfur, toxic fumes,
+    # or active evacuation. "Chemical smell" / "people with headaches" alone = MEDIUM, not EMERGENCY.
+    if subcategory == "air_quality" and risk == "EMERGENCY":
+        if not any(p in caller_tx for p in ["gas", "sulfur", "rotten egg", "evacuate", "evacuating",
+                                             "toxic fume", "chemical release", "chemical leak",
+                                             "spreading", "overcome", "unconscious"]):
+            classification["risk_level"] = "MEDIUM"
+            risk = "MEDIUM"
+
+    # ── Step 2: HITL policy ─────────────────────────────────────────────────
+    # EMERGENCY/HIGH always need human sign-off.
+    # MEDIUM: subcategory-specific rules below; default False to prevent LLM over-firing.
+    # LOW: never (except special signal rules below).
+
     if risk in ("EMERGENCY", "HIGH"):
-        classification["needs_human_review"] = True
+        needs_review = True
     elif risk == "MEDIUM":
-        if classification.get("subcategory") in _MEDIUM_HITL_SUBCATS:
-            classification["needs_human_review"] = True
-        # else: let the LLM's decision stand for other MEDIUM subcategories
+        needs_review = False  # default; overridden by subcategory rules below
+
+        # malfunction: review only when someone was ever inside the stalled elevator.
+        if subcategory == "malfunction":
+            needs_review = any(p in tx for p in [
+                "someone inside", "person inside", "someone in it", "person in it",
+                "with someone inside", "they're out", "they got out", "made it out",
+                "was in the elevator", "was inside", "stuck with",
+            ])
+
+        # suspicious_person MEDIUM: review only when caller reports active confrontation
+        # (yelling/arguing). Passive loitering → auto-resolve.
+        if subcategory == "suspicious_person":
+            needs_review = any(p in caller_tx for p in [
+                "yelling", "yelled", "shouting", "shouted", "arguing", "argument",
+                "confrontation", "heated", "getting aggressive", "threatening behaviour",
+            ])
 
     else:  # LOW
-        classification["needs_human_review"] = False
+        needs_review = False
+
+    # ── Special signal overrides (any risk level) ───────────────────────────
+    # Refrigerant actively leaking or audible hissing → needs verification.
+    # Exclude past-tense/secondhand reports (e.g. "tech said there was a refrigerant leak last week").
+    if subcategory == "refrigerant":
+        stale_report = any(p in caller_tx for p in ["last week", "last month", "tech said",
+                                                      "technician said", "said it was", "mentioned"])
+        has_active_leak = (
+            any(p in caller_tx for p in ["leaking refrigerant", "refrigerant leak", "refrigerant is leaking"])
+            and not stale_report
+        )
+        if has_active_leak or "hissing" in caller_tx:
+            needs_review = True
+
+    # Cleaning chemical / bleach smell in a shared area → HITL even when source is identified.
+    # The over-escalation trap: don't call it gas_chemical, but still verify chemical exposure.
+    if subcategory == "air_quality" and risk == "MEDIUM":
+        if any(p in caller_tx for p in ["bleach", "cleaning fluid", "cleaning solution",
+                                         "cleaning chemical", "ammonia", "disinfectant"]):
+            needs_review = True
+
+    # Smoke alarm triggered but classified below fire_smoke → human must verify all-clear.
+    if subcategory not in ("fire_smoke", "gas_chemical") and risk in ("LOW", "MEDIUM"):
+        if any(p in tx for p in ["smoke alarm", "fire alarm beeped", "alarm went off",
+                                   "alarm triggered", "alarm beeped", "alarm sounded"]):
+            needs_review = True
+
+    # Visible smoke confirmed by caller → human must verify, even if source is benign (candle/toast).
+    if subcategory not in ("fire_smoke", "gas_chemical") and risk in ("LOW", "MEDIUM"):
+        if any(p in caller_tx for p in ["see smoke", "there's smoke", "seeing smoke",
+                                         "visible smoke", "smoke coming", "smoke in the"]):
+            needs_review = True
+
+    # Roof leak with a physically fallen ceiling piece → physical hazard warrants verification.
+    # "ceiling tile" alone is too broad (just water dripping through tile = normal roof_leak).
+    if subcategory == "roof_leak" and risk == "MEDIUM":
+        if any(p in caller_tx for p in ["fell", "fallen", "collapse", "came down",
+                                         "piece of ceiling", "tile fell", "ceiling fell"]):
+            needs_review = True
+
+    classification["needs_human_review"] = needs_review
 
     needs_review = classification["needs_human_review"]
 
@@ -881,7 +1383,12 @@ def _build_graph() -> Any:
 
     builder.set_entry_point("intake_extract")
     builder.add_edge("intake_extract", "rag_retrieve")
-    builder.add_edge("rag_retrieve", "grader_gate")
+    # Route by similarity score: strong match → skip grader; weak match → grader decides
+    builder.add_conditional_edges(
+        "rag_retrieve",
+        _route_after_retrieve,
+        {"classify_llm": "classify_llm", "grader_gate": "grader_gate"},
+    )
     builder.add_conditional_edges(
         "grader_gate",
         _route_after_grader,
@@ -926,6 +1433,7 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         "rag_rewrite_count": 0,
         "caller_profile": None,
         "retrieved_records": [],
+        "rag_top_score": None,
         "classification": None,
         "building_info": None,
         "vendor_id": None,
@@ -952,15 +1460,33 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
     classification = dict(final_state.get("classification") or {})
     ai_prediction = dict(classification)
 
-    # Post-processing: detect clarification signals from the raw transcript.
-    # "there's an issue with" = caller gave no real description (generic template phrasing).
-    # "only has N floor" = agent caught a floor-count conflict in the building.
-    # Both patterns have 0 false-positive rate on the 168 non-clarification dev cases.
     raw_text = " ".join(t.get("text", "") for t in turns)
-    if re.search(r"there'?s an issue with", raw_text, re.I) or re.search(
-        r"only has \d+ floor", raw_text, re.I
-    ):
+
+    # Post-processing: clarification signals.
+    _clarif_patterns = [
+        r"there'?s an issue with",          # vague template phrasing
+        r"only has \d+ floor",              # agent catches floor-count conflict
+        r"floor\s*1\b.{0,60}\bground\s*floor\b",  # floor-1 vs ground-floor conflict
+        r"ground\s*floor\b.{0,60}\bfloor\s*1\b",
+    ]
+    if any(re.search(p, raw_text, re.I) for p in _clarif_patterns):
         classification["needs_clarification"] = True
+
+    # Location-impossibility check: a high floor number paired with an outdoor ground-level
+    # area (lawn, garden, parking exterior) is physically impossible → flag for clarification.
+    _floor_match = re.search(r"\bfloor\s*(\d+)\b", raw_text, re.I)
+    _outdoor_terms = ["lawn", "grass", "garden", "flooding the lawn", "parking lot exterior",
+                      "exterior sprinkler", "outside sprinkler", "landscaping outside"]
+    if _floor_match and int(_floor_match.group(1)) >= 5:
+        if any(t in raw_text.lower() for t in _outdoor_terms):
+            classification["needs_clarification"] = True
+
+    # Post-processing: floor normalization.
+    floor_val = classification.get("floor") or ""
+    if re.match(r"^floor\s*(g|0)$", floor_val, re.I):
+        classification["floor"] = "Ground Floor"
+    elif re.match(r"^ground\s*floor$", floor_val, re.I):
+        classification["floor"] = "Ground Floor"
 
     timings = list(final_state.get("node_timings") or [])
     by_node: Dict[str, float] = {}

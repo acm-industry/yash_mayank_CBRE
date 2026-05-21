@@ -1,0 +1,1389 @@
+[
+  {
+    "transcript_id": "EVAL-0027",
+    "caller_phone": "+1-707-555-0136",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Good afternoon, Elevator is stuck on the ground floor, nobody was in it."
+      },
+      {
+        "speaker": "agent",
+        "text": "Mhm. Is the car moving at all?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Doors open, like, car hasn't left the lobby."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Redwood Corporate Plaza, Floor 4, Suite 408."
+      },
+      {
+        "speaker": "agent",
+        "text": "Bumping this up to the on-call supervisor \u2014 vendor's going out as we speak."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'm not seeing anyone in the pool who fully covers this \u2014 I'll escalate to the on-call PM to route manually."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, uh, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0041",
+    "caller_phone": "+1-714-555-0157",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities \u2014 how can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hi there, Fence is leaning bad, wind must have done it."
+      },
+      {
+        "speaker": "agent",
+        "text": "Understood. Could it fall and hurt someone?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[door closing] Hold on, not blocking anything but it looks bad."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Canyon View Business Center, Floor 3."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it. I'll get someone out as soon as I can \u2014 should hear back within the hour."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0210",
+    "caller_phone": "+1-949-555-0227",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance \u2014 what's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Good morning, HVAC is blowing cold air even though it's set to heat on Floor 3 in Suite 306."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright. How cold is it in there?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Got a client meeting coming in, this is bad."
+      },
+      {
+        "speaker": "agent",
+        "text": "This one's a bit tricky \u2014 let me loop in the PM and get a tech rolling."
+      },
+      {
+        "speaker": "agent",
+        "text": "Hmm, none of our vendors are quite the right fit \u2014 let me bump this up to the on-call PM so they can handle it directly."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0224",
+    "caller_phone": "+1-949-555-0227",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance \u2014 what's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hello, uh, Two people on our floor got headaches from a weird smell in the air."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it. Can you describe the smell?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, not sulfur \u2014 more like a cleaning solvent."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "The Atrium at South Coast, Floor 3, Suite 306."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'll get a tech out \u2014 they'll text you when they're heading over."
+      },
+      {
+        "speaker": "agent",
+        "text": "Hmm, none of our vendors are quite the right fit \u2014 let me bump this up to the on-call PM so they can handle it directly."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0228",
+    "caller_phone": "+1-619-555-0124",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "We've got a pipe leak \u2014 water is dripping from the ceiling tile steadily."
+      },
+      {
+        "speaker": "agent",
+        "text": "Understood. Is it near any electrical outlets?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hold on \u2014 my mistake. It only happens when it rains, so this has to be a roof leak, not a pipe."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it \u2014 updating the ticket. Is the ceiling sagging?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, it's been pouring for like an hour."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Mission Bay Technology Center, Floor 7, Suite 704."
+      },
+      {
+        "speaker": "agent",
+        "text": "Sending a tech your way now. You'll hear from them en route."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0313",
+    "caller_phone": "+1-387-555-0157",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, this is Priya \u2014 what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Sorry, hello, There's a puddle at Airport Business Center on Floor 7 in Suite 709 in the main walkway, pretty big."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it. Has anyone fallen?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No one's fallen yet."
+      },
+      {
+        "speaker": "agent",
+        "text": "Nobody in our vendor list matches everything you need. Let me kick this over to the on-call PM."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0319",
+    "caller_phone": "+1-619-555-0188",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE dispatch, talk to me."
+      },
+      {
+        "speaker": "caller",
+        "text": "A piece of the ceiling fell \u2014 it's just one drop-ceiling tile, water-damaged, nothing structural, nobody hurt."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "It was one tile from a water leak \u2014 nobody hurt, just a mess."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Pacific Ridge Medical Plaza, um, Floor 4, Suite 410."
+      },
+      {
+        "speaker": "agent",
+        "text": "Tech is on the way. You'll get a text once they're rolling."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0329",
+    "caller_phone": "+1-397-555-0153",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, Marcus speaking. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Half the suite on Floor 6 has no power - breaker keeps tripping."
+      },
+      {
+        "speaker": "agent",
+        "text": "I want to make sure I have the right location \u2014 Rancho Del Sol Office Park only has 3 floors. Can you confirm the floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hold on, oh sorry \u2014 I meant Floor 1. I'm a little flustered."
+      },
+      {
+        "speaker": "agent",
+        "text": "Bumping this up to the on-call supervisor \u2014 vendor's going out as we speak."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0373",
+    "caller_phone": "+1-506-555-0595",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "There's yelling in the lobby \u2014 just two tenants arguing loudly, nothing physical, no weapons."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No weapons, no physical contact. Just loud arguing."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you tell me the building, floor, and suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Golden State Towers, Floor 2, Suite 205."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright \u2014 sending a vendor over and giving the PM a heads-up."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0376",
+    "caller_phone": "+1-340-555-0433",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Hi, CBRE facilities. What can I do for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "I mean, there's yelling in the lobby \u2014 just two tenants arguing loudly, nothing physical, no weapons."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No weapons, no physical contact. Just loud arguing."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[pa announcement in background] Brookfield Retail Center, Floor 1, Suite 105."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'll get a vendor rolling and let the property manager know."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0389",
+    "caller_phone": "+1-563-555-0996",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE dispatch, talk to me."
+      },
+      {
+        "speaker": "caller",
+        "text": "Like, we lost power on the floor about ten minutes ago."
+      },
+      {
+        "speaker": "agent",
+        "text": "Mhm. Any lights flickering before it went out?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hold on \u2014 I'm getting a burnt-plastic smell from the electrical closet now. This isn't just a power outage."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it \u2014 updating the ticket. Do you see any smoke?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Nobody's near it, I told everyone to back away."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[pa announcement in background] Crossroads Business Park, like, Floor 5."
+      },
+      {
+        "speaker": "agent",
+        "text": "911 is going out now and I'm alerting building ops \u2014 stay with me on the line if you can."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0395",
+    "caller_phone": "+1-454-555-0864",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance, this is Dana. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "The main doors are being weird."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, can you describe what you're seeing or smelling?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah it's a fire exit."
+      },
+      {
+        "speaker": "agent",
+        "text": "Is the door a fire exit?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah it's a fire exit."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "North Hollywood Arts Center, Floor 4, Suite 402."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright, I've put a ticket in \u2014 vendor will swing by during business hours."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0415",
+    "caller_phone": "+1-753-555-0170",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Uh, good afternoon, Chiller on Floor 1 is hissing and the cold air isn't very cold anymore."
+      },
+      {
+        "speaker": "agent",
+        "text": "Understood. Has the cooling dropped noticeably?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Still running but not cold."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, ticket's logged. Someone'll come out during business hours."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0467",
+    "caller_phone": "+1-449-555-0776",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Maintenance, what's the situation?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Um, the main doors are being weird."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, can you describe what you're seeing or smelling?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Stuck half-open, won't go either way."
+      },
+      {
+        "speaker": "agent",
+        "text": "Is the door a fire exit?"
+      },
+      {
+        "speaker": "caller",
+        "text": "You know, yeah it's a fire exit."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Pinnacle Financial Center, Floor 5, Suite 506."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, I'll line that up now. Confirmation text will come through shortly."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0468",
+    "caller_phone": "+1-328-555-0747",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Maintenance, what's the situation?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hello, Guy asking employees for their badge numbers \u2014 something's off."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright. Are they being aggressive?"
+      },
+      {
+        "speaker": "caller",
+        "text": "He's just standing there, not doing anything overt."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "El Monte Distribution Center, Loading Dock 2."
+      },
+      {
+        "speaker": "agent",
+        "text": "Are they still there?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, still there by the elevators."
+      },
+      {
+        "speaker": "agent",
+        "text": "Pulling in the supervisor and dispatching a vendor right now."
+      },
+      {
+        "speaker": "agent",
+        "text": "Nobody in our vendor list matches everything you need. Let me kick this over to the on-call PM."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0492",
+    "caller_phone": "+1-652-555-0513",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities \u2014 how can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "There's an issue with refrigerant."
+      },
+      {
+        "speaker": "agent",
+        "text": "Has the cooling dropped noticeably?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[muffled voices nearby] Performance dropped a lot since this morning."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Central Tower, Floor 27, Suite 2708."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it. I'll get someone out as soon as I can \u2014 should hear back within the hour."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0504",
+    "caller_phone": "+1-522-555-0453",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Good morning, Musty smell and I think I see mold."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, I see. Is anyone feeling sick?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Kind of chemical, sharp."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Brookfield Retail Center, Floor 2, Suite 205."
+      },
+      {
+        "speaker": "agent",
+        "text": "Sending a tech your way now. You'll hear from them en route."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0510",
+    "caller_phone": "+1-408-555-0174",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, Marcus speaking. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "I mean, something's dripping from up top."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, can you describe what you're seeing or smelling?"
+      },
+      {
+        "speaker": "caller",
+        "text": "It's a steady drip, I've got a bucket under it."
+      },
+      {
+        "speaker": "agent",
+        "text": "Is the ceiling sagging?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, it's been pouring for like an hour."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Like, meridian Business Park, Floor 2, Suite 201."
+      },
+      {
+        "speaker": "agent",
+        "text": "Sending a tech your way now. You'll hear from them en route."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0518",
+    "caller_phone": "+1-319-555-0228",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "There's an issue with lighting."
+      },
+      {
+        "speaker": "agent",
+        "text": "Is it one fixture or multiple?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Flickering, kind of strobing."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Westpark Professional Center, Floor 1, Suite 108."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, ticket's logged. Someone'll come out during business hours."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0528",
+    "caller_phone": "+1-909-555-0318",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, Marcus speaking. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Good morning, hold on, Ice on the sidewalk outside the main entrance."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, I see. Is the area blocked off?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, we set up a cone."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Crossroads Business Park, like, Floor 4, Suite 304."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'm not seeing anyone in the pool who fully covers this \u2014 I'll escalate to the on-call PM to route manually."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0606",
+    "caller_phone": "+1-310-555-0371",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hi there, Wet floor at Airport Business Center on Floor 7, no signs, someone already slipped."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it. Has anyone fallen?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No one's fallen yet."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, ticket's logged. Someone'll come out during business hours."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0620",
+    "caller_phone": "+1-704-555-0800",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities \u2014 how can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "The AC is acting funny \u2014 not broken exactly, hold on, just weird."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, can you describe what you're seeing or smelling?"
+      },
+      {
+        "speaker": "caller",
+        "text": "You know, still running but not cold."
+      },
+      {
+        "speaker": "agent",
+        "text": "Is the unit still running?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Performance dropped a lot since this morning."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Harbor Point Tower, Floor 7, Suite 708."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright, I've put a ticket in \u2014 vendor will swing by during business hours."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0664",
+    "caller_phone": "+1-217-555-0630",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, this is Priya \u2014 what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "There's a puddle in the main walkway, hold on, pretty big."
+      },
+      {
+        "speaker": "agent",
+        "text": "Understood. Is the area blocked off?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No one's fallen yet."
+      },
+      {
+        "speaker": "agent",
+        "text": "What's your building, floor, suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Brookfield Retail Center, Floor 3, Suite 308."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got the ticket open. Vendor should make it out during business hours."
+      },
+      {
+        "speaker": "caller",
+        "text": "I mean, okay."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0692",
+    "caller_phone": "+1-650-555-0347",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Hi, CBRE facilities. What can I do for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Guy asking employees for their badge numbers \u2014 something's off."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright. Are they still there?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hold on, he's just standing there, not doing anything overt."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Bayshore Commons, Floor 3, Suite 307."
+      },
+      {
+        "speaker": "agent",
+        "text": "Tricky one \u2014 I'll involve the PM and get a tech dispatched at the same time."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0708",
+    "caller_phone": "+1-634-555-0964",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hi there, sorry, Sink in the restroom on Floor 6 in Suite 603 won't drain properly."
+      },
+      {
+        "speaker": "agent",
+        "text": "Mhm. Is it overflowing or just running?"
+      },
+      {
+        "speaker": "caller",
+        "text": "It's overflowing a little, but slow."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, ticket's logged. Someone'll come out during business hours."
+      },
+      {
+        "speaker": "caller",
+        "text": "Alright, appreciate it."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0717",
+    "caller_phone": "+1-653-555-0634",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, this is Priya \u2014 what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[muffled voices nearby] You know, two people on our floor on Floor 13 got headaches from a weird smell in the air."
+      },
+      {
+        "speaker": "agent",
+        "text": "I want to make sure I have the right location \u2014 La Jolla Professional Suites only has 10 floors. Can you confirm the floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Oh sorry \u2014 I meant Floor 4. I'm actually quite a bit flustered."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'll get a vendor rolling and let the property manager know."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0722",
+    "caller_phone": "+1-485-555-0395",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities \u2014 how can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hi there, There's a big crack in the storefront glass \u2014 don't think it was there yesterday."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright. Can the opening be secured?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No injuries."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "One Commerce Center, I mean, Floor 7, Suite 706."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'll send a vendor out and loop in the PM."
+      },
+      {
+        "speaker": "caller",
+        "text": "Sorry, thank you."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0788",
+    "caller_phone": "+1-916-555-0266",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, Marcus speaking. How can I help?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Smoke alarm beeped once and there's smoke \u2014 but it was just burnt toast in the toaster, no fire."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No fire, just the burnt smell."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Um, capitol Mall Tower, Floor 20, Suite 2004."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright, I'll send a vendor over. You'll get a text once they're rolling."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0840",
+    "caller_phone": "+1-666-555-0141",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Maintenance, what's the situation?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hello, Strong chemical smell throughout the suite. People are coughing."
+      },
+      {
+        "speaker": "agent",
+        "text": "Understood. Does it smell like gas or sulfur?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Two people just went home from headaches."
+      },
+      {
+        "speaker": "agent",
+        "text": "Where exactly \u2014 which suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "El Monte Distribution Center, hold on, Mezzanine."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'll get a vendor rolling and let the property manager know."
+      },
+      {
+        "speaker": "caller",
+        "text": "Um, okay."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0844",
+    "caller_phone": "+1-780-555-0397",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Dispatch, what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "We see smoke, but it's from someone's candle being too close to a vent \u2014 already put out."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No fire, just the burnt smell."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you tell me the building, floor, and suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Sorry, bayshore Commons, Rooftop."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, ticket's logged. Someone'll come out during business hours."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0851",
+    "caller_phone": "+1-855-555-0254",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, this is Priya \u2014 what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hold on, hello, Glass panel has a big crack running across it."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay. Is anyone injured?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No injuries."
+      },
+      {
+        "speaker": "agent",
+        "text": "What's your building, floor, suite?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Harbor Point Tower, Floor 16, Suite 1608."
+      },
+      {
+        "speaker": "agent",
+        "text": "Tech is on the way. You'll get a text once they're rolling."
+      },
+      {
+        "speaker": "caller",
+        "text": "Got it, thanks."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0886",
+    "caller_phone": "+1-592-555-0725",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Maintenance, what's the situation?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Smoke alarm beeped once and there's smoke \u2014 but it was just burnt toast in the toaster, you know, no fire."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No fire, just the burnt smell."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hold on, seaside Professional Center, Rooftop."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got the ticket open. Vendor should make it out during business hours."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0898",
+    "caller_phone": "+1-650-555-0121",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE dispatch, talk to me."
+      },
+      {
+        "speaker": "caller",
+        "text": "Um, good morning, There's a person loitering at Shoreline Tech Campus on Floor 4 in Suite 408 who doesn't have a badge."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay. Are they being aggressive?"
+      },
+      {
+        "speaker": "caller",
+        "text": "He's just standing there, not doing anything overt."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you describe them?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, still there by the elevators."
+      },
+      {
+        "speaker": "agent",
+        "text": "Tricky one \u2014 I'll involve the PM and get a tech dispatched at the same time."
+      },
+      {
+        "speaker": "agent",
+        "text": "Nobody in our vendor list matches everything you need. Let me kick this over to the on-call PM."
+      },
+      {
+        "speaker": "caller",
+        "text": "Okay, please hurry."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0930",
+    "caller_phone": "+1-547-555-0882",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Hi, CBRE facilities. What can I do for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[background: hvac hum] Hold on, strong smell in the office."
+      },
+      {
+        "speaker": "agent",
+        "text": "Does it smell like gas or sulfur?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No, not sulfur \u2014 more like a cleaning solvent."
+      },
+      {
+        "speaker": "agent",
+        "text": "Which building and floor are you at?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Like, torrance Gateway Center, Floor 7."
+      },
+      {
+        "speaker": "agent",
+        "text": "Tech is on the way. You'll get a text once they're rolling."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0943",
+    "caller_phone": "+1-759-555-0667",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE facilities, this is Sam. What's going on?"
+      },
+      {
+        "speaker": "caller",
+        "text": "The AC stopped working about an hour ago, it's getting hot."
+      },
+      {
+        "speaker": "agent",
+        "text": "Understood. Are any servers or equipment at risk?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Hmm \u2014 now that I pay attention, it's not just that the AC is out. There's a strange smell too."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got it \u2014 updating the ticket. Can you describe the smell?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Um, no, not sulfur \u2014 more like a cleaning solvent."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "[pa announcement in background] I mean, one Commerce Center, Floor 6, Suite 604."
+      },
+      {
+        "speaker": "agent",
+        "text": "Alright \u2014 sending a vendor over and giving the PM a heads-up."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0959",
+    "caller_phone": "+1-520-555-0215",
+    "caller_known_in_profiles": false,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "Hi, CBRE facilities. What can I do for you?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Something's dripping from up top."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay, can you describe what you're seeing or smelling?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, it's been pouring for like an hour."
+      },
+      {
+        "speaker": "agent",
+        "text": "Is the ceiling sagging?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Yeah, it's been pouring for like an hour."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Wilshire Grand Offices, Floor 27, Suite 2704."
+      },
+      {
+        "speaker": "agent",
+        "text": "I'll get a vendor rolling and let the property manager know."
+      }
+    ]
+  },
+  {
+    "transcript_id": "EVAL-0974",
+    "caller_phone": "+1-213-555-0165",
+    "caller_known_in_profiles": true,
+    "turns": [
+      {
+        "speaker": "agent",
+        "text": "CBRE maintenance line, this is Priya \u2014 what do you need?"
+      },
+      {
+        "speaker": "caller",
+        "text": "We see smoke, but it's from someone's candle being too close to a vent \u2014 already put out."
+      },
+      {
+        "speaker": "agent",
+        "text": "Okay \u2014 can you confirm there's no actual fire or injury right now?"
+      },
+      {
+        "speaker": "caller",
+        "text": "No fire, just the burnt smell."
+      },
+      {
+        "speaker": "agent",
+        "text": "Can you confirm the building and floor?"
+      },
+      {
+        "speaker": "caller",
+        "text": "Central Tower, Floor 22, Suite 2210."
+      },
+      {
+        "speaker": "agent",
+        "text": "Got the ticket open. Vendor should make it out during business hours."
+      }
+    ]
+  }
+]
