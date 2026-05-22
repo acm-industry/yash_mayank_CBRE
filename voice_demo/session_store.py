@@ -23,6 +23,7 @@ class CallSession:
     pending_hitl_review_id: Optional[str] = None
     active_graph_thread_id: Optional[str] = None
     building_ask_count: int = 0
+    hitl_hold_poll_count: int = 0
     intake_slots: Dict[str, Optional[str]] = field(
         default_factory=lambda: {
             "issue": None,
@@ -30,6 +31,8 @@ class CallSession:
             "floor": None,
             "urgency": None,
             "impact_scope": None,
+            "active_status": None,
+            "safety_signal": None,
         }
     )
     asked_question_keys: Set[str] = field(default_factory=set)
