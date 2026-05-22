@@ -1,0 +1,43 @@
+[
+  {
+    "timestamp": "2026-05-21T16:42:28.925860",
+    "thread_id": "hitl-EVAL-0001-3ce3f309",
+    "transcript_id": "EVAL-0001",
+    "review_outcome": "auto_routed",
+    "routing_decision": "Auto-routed -> waste_odor (risk LOW)",
+    "hitl_decision": {
+      "status": "auto_routed",
+      "reason": "No human review required"
+    },
+    "ai_prediction_pre_review": {
+      "category": "JANITORIAL",
+      "subcategory": "waste_odor",
+      "risk_level": "LOW",
+      "needs_human_review": false,
+      "needs_clarification": false,
+      "building_name": "Pinnacle Financial Center",
+      "address": "600 Financial Dr",
+      "floor": "Floor 23",
+      "call_summary": "The caller reported a burnt popcorn smell on Floor 23 in Suite 2307 at Pinnacle Financial Center, causing panic among people. There is no actual fire or injury. Dispatch will be sent to address the odor."
+    },
+    "human_override": null,
+    "final_decision": {
+      "category": "JANITORIAL",
+      "subcategory": "waste_odor",
+      "risk_level": "LOW",
+      "needs_human_review": false,
+      "needs_clarification": false,
+      "building_name": "Pinnacle Financial Center",
+      "address": "600 Financial Dr",
+      "floor": "Floor 23",
+      "dispatched_vendor_id": "v_023",
+      "dispatched_emergency_services": false,
+      "hitl_decision": {
+        "status": "auto_routed",
+        "reason": "No human review required"
+      },
+      "routing_decision": "Auto-routed -> waste_odor (risk LOW)"
+    },
+    "full_transcript": "[AGENT] Hi, CBRE facilities. What can I do for you?\n[CALLER] Someone burned popcorn in the microwave \u2014 the whole floor smells smoky, and the fire alarm didn't go off but people are panicking.\n[AGENT] Okay \u2014 can you confirm there's no actual fire or injury right now?\n[CALLER] Uh, no fire, just the burnt smell.\n[AGENT] Which building and floor are you at?\n[CALLER] Pinnacle Financial Center, Floor 23, Suite 2307.\n[AGENT] Okay, I'll line that up now. Confirmation text will come through shortly."
+  }
+]

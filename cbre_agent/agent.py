@@ -3,10 +3,10 @@ CBRE Call Intake HITL-RAG Agent
 Exposes: classify(turns, caller_phone) -> dict
 
 Pipeline (LangGraph state machine):
-  intake_extract → rag_retrieve ⇄ grader_gate → classify_llm → validator_gate
+  intake_extract → rag_retrieve ⇄ grader_gate → classify_llm → validator_gate → hitl_review
        (rag_query copy of transcript; optional rewrite_rag_query loop if grader fails)
-                                                       ↓
-                                              vendor_select → log_result
+                                                                      ↓
+                                                             vendor_select → log_result
 
 Build the vector index once before first use:
     python your_submission/build_index.py
@@ -311,6 +311,8 @@ class AgentState(TypedDict):
     vendor_id: Optional[str]
     dispatched_emergency: bool
     human_override: Optional[Dict[str, Any]]
+    hitl_decision: Optional[Dict[str, Any]]
+    routing_decision: Optional[str]
     final_decision: Optional[Dict[str, Any]]
     # Per-node wall times (seconds); multiple entries when a node runs more than once (e.g. RAG loop).
     node_timings: List[Dict[str, Any]]
@@ -335,7 +337,7 @@ def _merge_with_timing(
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT = f"""You are an expert CBRE facilities dispatch operator classifying incoming maintenance calls.
-
+.
 === TAXONOMY ===
 PLUMBING:        pipe_leak | restroom_fixture | drainage_backup | roof_leak
 ELECTRICAL:      power_outage | lighting | panel_hazard | low_voltage_data
@@ -1192,28 +1194,124 @@ def validator_gate(state: AgentState) -> dict:
 
     classification["needs_human_review"] = needs_review
 
-    needs_review = classification["needs_human_review"]
-
-    human_override: Optional[dict] = None
-    if needs_review:
-        # In batch eval: interrupt() returns None immediately when we resume
-        # with Command(resume=None).  In Streamlit: returns the reviewer's dict.
-        reviewer_input = interrupt({
-            "transcript": state["transcript_text"],
-            "ai_classification": classification,
-        })
-        # In batch eval, interrupt() returns "approved" (the sentinel we resume with).
-        # In Streamlit, it returns a dict of human overrides.
-        if reviewer_input and reviewer_input != "approved":
-            classification.update(reviewer_input)
-            human_override = reviewer_input
-
     dt = time.perf_counter() - t0
     return _merge_with_timing(
         state,
         "validator_gate",
         dt,
-        {"classification": classification, "human_override": human_override},
+        {"classification": classification},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Node: hitl_review
+# ---------------------------------------------------------------------------
+
+
+def hitl_review(state: AgentState) -> dict:
+    """Node: pause for conditional human review and apply approve/override."""
+    t0 = time.perf_counter()
+    classification = dict(state["classification"])
+    needs_review = bool(classification.get("needs_human_review", False))
+    original_classification = dict(classification)
+
+    human_override: Optional[dict] = None
+    hitl_decision: Dict[str, Any] = {
+        "status": "auto_routed",
+        "reason": "No human review required",
+    }
+    routing_decision = (
+        f"Auto-routed -> {classification.get('subcategory', 'unknown')} "
+        f"(risk {classification.get('risk_level', 'LOW')})"
+    )
+
+    if needs_review:
+        review_reason = f"risk={classification.get('risk_level', 'LOW')}"
+        reviewer_input = interrupt({
+            "type": "review_required",
+            "reason": review_reason,
+            "transcript": state["transcript_text"],
+            "ai_classification": classification,
+        })
+
+        # Approve path:
+        # - batch eval sentinel: "approved"
+        # - interactive payload: {"approved": True}
+        approved = (
+            reviewer_input == "approved"
+            or (isinstance(reviewer_input, dict) and reviewer_input.get("approved") is True)
+        )
+
+        if approved:
+            hitl_decision = {"status": "approved", "reason": review_reason}
+            routing_decision = (
+                f"Human approved -> {classification.get('subcategory', 'unknown')} "
+                f"(risk {classification.get('risk_level', 'LOW')})"
+            )
+        elif isinstance(reviewer_input, dict) and reviewer_input:
+            # Control keys are metadata, not direct classification fields.
+            key_aliases = {
+                "override_category": "category",
+                "override_subcategory": "subcategory",
+                "override_risk_level": "risk_level",
+                "override_building_name": "building_name",
+                "override_address": "address",
+                "override_floor": "floor",
+            }
+            override_payload: Dict[str, Any] = {}
+            for key, value in reviewer_input.items():
+                if key in {"approved", "decision", "action", "override_reason", "override_code"}:
+                    continue
+                target_key = key_aliases.get(key, key)
+                override_payload[target_key] = value
+
+            # Support a compact override contract.
+            # In this codebase we route by taxonomy fields rather than a single selected code.
+            if reviewer_input.get("override_code") and not override_payload.get("subcategory"):
+                override_payload["subcategory"] = reviewer_input["override_code"]
+
+            if override_payload:
+                classification.update(override_payload)
+                classification["needs_human_review"] = False
+                human_override = reviewer_input
+                hitl_decision = {
+                    "status": "overridden",
+                    "reason": review_reason,
+                    "override_reason": reviewer_input.get("override_reason"),
+                }
+                routing_decision = (
+                    f"Human override -> {classification.get('subcategory', 'unknown')} "
+                    f"(risk {classification.get('risk_level', 'LOW')})"
+                )
+            else:
+                # Safety fallback: no concrete overrides supplied.
+                hitl_decision = {"status": "approved", "reason": review_reason}
+                routing_decision = (
+                    f"Human approved -> {classification.get('subcategory', 'unknown')} "
+                    f"(risk {classification.get('risk_level', 'LOW')})"
+                )
+        else:
+            # Defensive fallback for unexpected resume payloads.
+            hitl_decision = {"status": "approved", "reason": review_reason}
+            routing_decision = (
+                f"Human approved -> {classification.get('subcategory', 'unknown')} "
+                f"(risk {classification.get('risk_level', 'LOW')})"
+            )
+
+    if classification != original_classification:
+        hitl_decision["original_classification"] = original_classification
+
+    dt = time.perf_counter() - t0
+    return _merge_with_timing(
+        state,
+        "hitl_review",
+        dt,
+        {
+            "classification": classification,
+            "human_override": human_override,
+            "hitl_decision": hitl_decision,
+            "routing_decision": routing_decision,
+        },
     )
 
 
@@ -1359,6 +1457,8 @@ def log_result(state: AgentState) -> dict:
         "floor": classification.get("floor"),
         "dispatched_vendor_id": state.get("vendor_id"),
         "dispatched_emergency_services": state.get("dispatched_emergency", False),
+        "hitl_decision": state.get("hitl_decision"),
+        "routing_decision": state.get("routing_decision"),
     }
     dt = time.perf_counter() - t0
     return _merge_with_timing(state, "log_result", dt, {"final_decision": final_decision})
@@ -1378,6 +1478,7 @@ def _build_graph() -> Any:
     builder.add_node("rewrite_rag_query", rewrite_rag_query)
     builder.add_node("classify_llm", classify_llm)
     builder.add_node("validator_gate", validator_gate)
+    builder.add_node("hitl_review", hitl_review)
     builder.add_node("vendor_select", vendor_select)
     builder.add_node("log_result", log_result)
 
@@ -1396,7 +1497,8 @@ def _build_graph() -> Any:
     )
     builder.add_edge("rewrite_rag_query", "rag_retrieve")
     builder.add_edge("classify_llm", "validator_gate")
-    builder.add_edge("validator_gate", "vendor_select")
+    builder.add_edge("validator_gate", "hitl_review")
+    builder.add_edge("hitl_review", "vendor_select")
     builder.add_edge("vendor_select", "log_result")
     builder.add_edge("log_result", END)
 
@@ -1439,13 +1541,15 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
         "vendor_id": None,
         "dispatched_emergency": False,
         "human_override": None,
+        "hitl_decision": None,
+        "routing_decision": None,
         "final_decision": None,
         "rag_documents_relevant": None,
         "node_timings": [],
     }
 
     wall_t0 = time.perf_counter()
-    # First invocation — may pause at validator_gate if needs_human_review
+    # First invocation — may pause at hitl_review if needs_human_review
     _GRAPH.invoke(initial_state, config)
 
     # Handle interrupt: in batch mode resume immediately with no override.
@@ -1524,6 +1628,9 @@ def classify(turns: list[dict], caller_phone: str | None) -> dict:
             "full_transcript": final_state.get("transcript_text", ""),
             "ai_prediction":   ai_prediction,
             "human_override":  final_state.get("human_override"),
+            "hitl_decision":   final_state.get("hitl_decision"),
+            "routing_decision": final_state.get("routing_decision"),
+            "was_overridden": bool(final_state.get("human_override")),
             "final_decision":  final_state.get("final_decision") or {},
         },
         "_latency": latency_payload,

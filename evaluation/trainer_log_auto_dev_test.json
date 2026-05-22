@@ -1,0 +1,71 @@
+[
+  {
+    "timestamp": "2026-05-21T16:06:15.455294",
+    "thread_id": "hitl-EVAL-0019-e1e59fc7",
+    "transcript_id": "EVAL-0019",
+    "review_outcome": "human_override",
+    "routing_decision": "Human override -> power_outage (risk MEDIUM)",
+    "hitl_decision": {
+      "status": "overridden",
+      "reason": "risk=HIGH",
+      "override_reason": "Auto override from dev_labels.json ground truth.",
+      "original_classification": {
+        "category": "ELECTRICAL",
+        "subcategory": "power_outage",
+        "risk_level": "HIGH",
+        "needs_human_review": true,
+        "needs_clarification": false,
+        "building_name": "Oakwood Corporate Campus - Building A",
+        "address": "400 Oakwood Pkwy",
+        "floor": "Floor 6",
+        "call_summary": "The caller reported that the entire suite on Floor 6 in Suite 605 at Oakwood Corporate Campus - Building A has no power, with the breaker continuously tripping. A technician has been dispatched to address the issue."
+      }
+    },
+    "ai_prediction_pre_review": {
+      "category": "ELECTRICAL",
+      "subcategory": "power_outage",
+      "risk_level": "HIGH",
+      "needs_human_review": true,
+      "needs_clarification": false,
+      "building_name": "Oakwood Corporate Campus - Building A",
+      "address": "400 Oakwood Pkwy",
+      "floor": "Floor 6",
+      "call_summary": "The caller reported that the entire suite on Floor 6 in Suite 605 at Oakwood Corporate Campus - Building A has no power, with the breaker continuously tripping. A technician has been dispatched to address the issue."
+    },
+    "human_override": {
+      "approved": false,
+      "override_risk_level": "MEDIUM",
+      "override_reason": "Auto override from dev_labels.json ground truth."
+    },
+    "final_decision": {
+      "category": "ELECTRICAL",
+      "subcategory": "power_outage",
+      "risk_level": "MEDIUM",
+      "needs_human_review": false,
+      "needs_clarification": false,
+      "building_name": "Oakwood Corporate Campus - Building A",
+      "address": "400 Oakwood Pkwy",
+      "floor": "Floor 6",
+      "dispatched_vendor_id": "v_007",
+      "dispatched_emergency_services": false,
+      "hitl_decision": {
+        "status": "overridden",
+        "reason": "risk=HIGH",
+        "override_reason": "Auto override from dev_labels.json ground truth.",
+        "original_classification": {
+          "category": "ELECTRICAL",
+          "subcategory": "power_outage",
+          "risk_level": "HIGH",
+          "needs_human_review": true,
+          "needs_clarification": false,
+          "building_name": "Oakwood Corporate Campus - Building A",
+          "address": "400 Oakwood Pkwy",
+          "floor": "Floor 6",
+          "call_summary": "The caller reported that the entire suite on Floor 6 in Suite 605 at Oakwood Corporate Campus - Building A has no power, with the breaker continuously tripping. A technician has been dispatched to address the issue."
+        }
+      },
+      "routing_decision": "Human override -> power_outage (risk MEDIUM)"
+    },
+    "full_transcript": "[AGENT] CBRE maintenance line, what do you need?\n[CALLER] Hello, Half the suite at Oakwood Corporate Campus - Building A on Floor 6 in Suite 605 has no power - breaker keeps tripping.\n[AGENT] Understood. Are the emergency lights on?\n[CALLER] Whole floor, sorry, all the lights and outlets.\n[AGENT] Sending a tech your way now. You'll hear from them en route.\n[CALLER] Like, alright, appreciate it."
+  }
+]
