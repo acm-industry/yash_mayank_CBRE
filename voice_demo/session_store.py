@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 
 def _utc_now_iso() -> str:
@@ -15,6 +15,21 @@ class CallSession:
     caller_phone: Optional[str]
     turns: List[dict] = field(default_factory=list)
     turn_count: int = 0
+    clarification_rounds: int = 0
+    classify_attempts: int = 0
+    pending_clarification: bool = False
+    clarification_focus: Optional[str] = None
+    clarification_prompt_caller_turn: int = 0
+    intake_slots: Dict[str, Optional[str]] = field(
+        default_factory=lambda: {
+            "issue": None,
+            "building_name": None,
+            "floor": None,
+            "urgency": None,
+            "impact_scope": None,
+        }
+    )
+    asked_question_keys: Set[str] = field(default_factory=set)
     created_at: str = field(default_factory=_utc_now_iso)
     updated_at: str = field(default_factory=_utc_now_iso)
 

@@ -8,6 +8,7 @@ def incoming_call_prompt() -> str:
     response = VoiceResponse()
     response.say(
         "Thank you for calling CBRE maintenance intake. "
+        "I will ask a few quick questions and then submit your work order. "
         "After the beep, please describe the issue.",
         voice="alice",
     )
@@ -41,6 +42,20 @@ def reprompt_record(message: str) -> str:
     return str(response)
 
 
+def silent_record_only() -> str:
+    """Fallback record-only TwiML with no spoken prompt."""
+    response = VoiceResponse()
+    response.record(
+        action="/voice/process",
+        method="POST",
+        max_length=30,
+        timeout=5,
+        play_beep=True,
+        recording_status_callback_method="POST",
+    )
+    return str(response)
+
+
 def play_audio_and_hangup(audio_url: str | None, outro_text: str | None = None) -> str:
     response = VoiceResponse()
     if audio_url:
@@ -51,20 +66,19 @@ def play_audio_and_hangup(audio_url: str | None, outro_text: str | None = None) 
     return str(response)
 
 
-def play_audio_then_record(audio_url: str | None, follow_up_text: str) -> str:
+def play_audio_then_record(audio_url: str | None, follow_up_text: str | None = None) -> str:
     response = VoiceResponse()
     if audio_url:
         response.play(audio_url)
-    response.say(follow_up_text, voice="alice")
+    if follow_up_text:
+        response.say(follow_up_text, voice="alice")
     response.record(
         action="/voice/process",
         method="POST",
         max_length=30,
-        timeout=3,
+        timeout=5,
         play_beep=True,
         recording_status_callback_method="POST",
     )
-    response.say("No response received. We will close this call now.", voice="alice")
-    response.hangup()
     return str(response)
 
