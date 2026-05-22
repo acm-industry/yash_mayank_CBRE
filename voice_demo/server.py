@@ -42,7 +42,7 @@ class Settings(BaseModel):
     elevenlabs_api_key: str = os.getenv("ELEVENLABS_API_KEY", "")
     elevenlabs_voice_id: str = os.getenv("ELEVENLABS_VOICE_ID", "")
     demo_mode: bool = os.getenv("VOICE_DEMO_MODE", "false").lower() == "true"
-    max_turns_per_call: int = int(os.getenv("VOICE_DEMO_MAX_TURNS", "5"))
+    max_turns_per_call: int = int(os.getenv("VOICE_DEMO_MAX_TURNS", "7"))
     max_clarification_rounds: int = int(os.getenv("VOICE_DEMO_MAX_CLARIFICATION_ROUNDS", "2"))
     max_classify_attempts: int = int(os.getenv("VOICE_DEMO_MAX_CLASSIFY_ATTEMPTS", "2"))
     min_caller_turns_before_classify: int = int(os.getenv("VOICE_DEMO_MIN_CALLER_TURNS_BEFORE_CLASSIFY", "2"))
@@ -113,14 +113,39 @@ def _essential_slots_present(session: CallSession) -> bool:
     )
 
 
+def _context_signal_present(session: CallSession) -> bool:
+    """At least one of scope / active_status / safety_signal was gathered."""
+    return bool(
+        session.intake_slots.get("impact_scope")
+        or session.intake_slots.get("active_status")
+        or session.intake_slots.get("safety_signal")
+    )
+
+
 def _agent_turn_count(session: CallSession) -> int:
     return sum(1 for turn in session.turns if turn.get("speaker") == "agent")
+
+
+def _caller_opening_was_short(session: CallSession) -> bool:
+    """True if the very first caller utterance was <= 10 words."""
+    first_caller = next((t for t in session.turns if t.get("speaker") == "caller"), None)
+    if not first_caller:
+        return False
+    return len((first_caller.get("text") or "").split()) <= 10
+
+
+def _min_agent_turns_required(session: CallSession) -> int:
+    """If the caller's opening was short, require an extra agent probe before classify."""
+    base = SETTINGS.min_agent_turns_before_classify
+    if _caller_opening_was_short(session):
+        return max(base, 2)
+    return base
 
 
 def _has_min_dialogue_for_first_classify(session: CallSession) -> bool:
     return (
         session.turn_count >= SETTINGS.min_caller_turns_before_classify
-        and _agent_turn_count(session) >= SETTINGS.min_agent_turns_before_classify
+        and _agent_turn_count(session) >= _min_agent_turns_required(session)
     )
 
 
@@ -247,12 +272,15 @@ def _update_slots_from_caller_text(session: CallSession, text: str) -> None:
 def _can_attempt_classify(session: CallSession) -> bool:
     """Silent guard: returns True only when it is safe to actually invoke classify().
 
-    This does NOT speak any canned questions to the caller — it just decides
-    whether we should call the agent now or keep the LLM-driven intake loop going.
+    Requires: min dialogue, all 3 essential slots, AND at least one context signal
+    (scope, active_status, or safety_signal). This forces the intake LLM to
+    probe for severity/impact before we ever call classify().
     """
     if not _has_min_dialogue_for_first_classify(session):
         return False
     if not _essential_slots_present(session):
+        return False
+    if not _context_signal_present(session):
         return False
     return True
 
@@ -703,6 +731,7 @@ async def voice_process(
                 session.pending_clarification = False
                 session.clarification_focus = None
                 session.clarification_prompt_caller_turn = 0
+                session.hitl_hold_poll_count = 0
                 response_text = final_dispatch_response(prediction, session.turns)
                 session.append_turn("agent", response_text)
                 xml, tts_seconds = _speak(response_text, continue_recording=False)
@@ -725,16 +754,26 @@ async def voice_process(
                 SESSIONS.end(CallSid)
                 return Response(content=xml, media_type="application/xml")
 
-            # Still pending — gently hold the line, regardless of whether the caller spoke.
-            hold_text = "A supervisor is still reviewing your request. Please stay on the line."
-            session.append_turn("agent", hold_text)
-            xml, tts_seconds = _speak(hold_text, continue_recording=True)
+            # Still pending — keep the call alive. To avoid repeating the hold
+            # message every ~5s (Gather poll cadence), only speak periodically.
+            session.hitl_hold_poll_count += 1
+            speak_reminder = session.hitl_hold_poll_count % 4 == 0  # ~every 20s
+            tts_seconds = 0.0
+            if speak_reminder:
+                hold_text = "Still verifying with the supervisor. Please stay on the line — almost there."
+                session.append_turn("agent", hold_text)
+                xml, tts_seconds = _speak(hold_text, continue_recording=True)
+            else:
+                # Silent listen — keeps Twilio Gather active without re-speaking.
+                xml = silent_record_only()
             timings = {
                 "stt_seconds": round(stt_seconds, 4),
                 "classify_seconds": 0.0,
                 "tts_seconds": round(tts_seconds, 4),
                 "request_total_seconds": round(time.perf_counter() - started, 4),
                 "phase": "hitl_pending_wait",
+                "hold_poll_count": session.hitl_hold_poll_count,
+                "spoke_reminder": speak_reminder,
             }
             print(f"Call {CallSid} waiting on live HITL review timings={timings}")
             return Response(content=xml, media_type="application/xml")
@@ -774,6 +813,9 @@ async def voice_process(
                     "building_name": decision.captured_building_name,
                     "floor": decision.captured_floor,
                     "urgency": decision.captured_urgency,
+                    "impact_scope": decision.captured_impact_scope,
+                    "active_status": decision.captured_active_status,
+                    "safety_signal": decision.captured_safety_signal,
                 },
             )
 
@@ -782,14 +824,51 @@ async def voice_process(
             if "building" in llm_text_lower or "property" in llm_text_lower or "location" in llm_text_lower:
                 session.building_ask_count += 1
 
-            can_finalize = (
+            # SAFETY OVERRIDE: if the LLM tries to finalize but essential location slots are
+            # missing, force a question for the missing slot instead. The LLM should not be
+            # finalizing without building/floor.
+            missing_building = not session.intake_slots.get("building_name")
+            missing_floor = not session.intake_slots.get("floor")
+            overridden_question: Optional[str] = None
+            if decision.should_finalize and (missing_building or missing_floor):
+                if missing_building and missing_floor:
+                    overridden_question = "Got it. Which building and floor are you calling from?"
+                elif missing_building:
+                    overridden_question = "Got it. Which building are you calling from?"
+                else:
+                    overridden_question = "Got it. What floor or area is impacted?"
+
+            # If we are near the turn cap and location is still missing, force the ask now
+            # regardless of what the LLM wanted to say next.
+            near_cap_force_location = (
+                not reached_turn_cap
+                and session.turn_count >= (SETTINGS.max_turns_per_call - 2)
+                and (missing_building or missing_floor)
+            )
+            if near_cap_force_location and overridden_question is None:
+                if missing_building and missing_floor:
+                    overridden_question = "And just so I can route this, which building and floor are you calling from?"
+                elif missing_building:
+                    overridden_question = "And which building are you calling from?"
+                else:
+                    overridden_question = "And what floor or area is impacted?"
+
+            # Allow finalize only when:
+            #  - the LLM says so AND we have a real context signal AND building+floor are known, OR
+            #  - we hit turn cap, OR caller indicates they are done, OR we are stuck on building.
+            llm_ready_to_finalize = bool(
                 decision.should_finalize
+                and _essential_slots_present(session)
+                and _context_signal_present(session)
+            )
+            can_finalize = (
+                llm_ready_to_finalize
                 or reached_turn_cap
                 or _caller_done(transcript)
                 or (session.building_ask_count >= 3 and session.intake_slots.get("issue"))
             )
             if not can_finalize and not reached_turn_cap:
-                question = _ensure_question(decision.agent_response)
+                question = overridden_question or _ensure_question(decision.agent_response)
                 session.append_turn("agent", question)
                 xml, tts_seconds = _speak(question, continue_recording=True)
                 timings = {
@@ -798,11 +877,13 @@ async def voice_process(
                     "tts_seconds": round(tts_seconds, 4),
                     "request_total_seconds": round(time.perf_counter() - started, 4),
                     "phase": "llm_intake_turn",
+                    "overridden": overridden_question is not None,
                 }
                 print(
                     f"Call {CallSid} intake_slots={session.intake_slots} timings={timings} "
                     f"llm_finalize={decision.should_finalize} pending_clarification={session.pending_clarification} "
-                    f"building_ask_count={session.building_ask_count}"
+                    f"building_ask_count={session.building_ask_count} missing_building={missing_building} "
+                    f"missing_floor={missing_floor}"
                 )
                 return Response(content=xml, media_type="application/xml")
 
@@ -816,8 +897,8 @@ async def voice_process(
         if run_status == "pending_review":
             review_id = run_payload["review_id"]
             hold_text = (
-                "This request requires supervisor review before dispatch. "
-                "Please stay on the line while we complete the review."
+                "Thanks for those details. Please hold for just a moment while a "
+                "human supervisor verifies this before we dispatch."
             )
             session.append_turn("agent", hold_text)
             xml, tts_seconds = _speak(hold_text, continue_recording=True)
