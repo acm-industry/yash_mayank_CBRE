@@ -20,6 +20,9 @@ class CallSession:
     pending_clarification: bool = False
     clarification_focus: Optional[str] = None
     clarification_prompt_caller_turn: int = 0
+    pending_hitl_review_id: Optional[str] = None
+    active_graph_thread_id: Optional[str] = None
+    building_ask_count: int = 0
     intake_slots: Dict[str, Optional[str]] = field(
         default_factory=lambda: {
             "issue": None,

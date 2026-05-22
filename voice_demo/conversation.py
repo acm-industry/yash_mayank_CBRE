@@ -39,16 +39,32 @@ def decide_next_step(
     max_turns: int,
     pending_clarification: bool = False,
     clarification_focus: Optional[str] = None,
+    known_building_names: Optional[List[str]] = None,
+    building_ask_count: int = 0,
 ) -> IntakeDecision:
     system = SystemMessage(
         content=(
-            "You are a CBRE phone intake operator. Drive a natural, concise back-and-forth to gather "
-            "enough context before work-order submission. Ask at most one focused follow-up question per turn. "
-            "Only set should_finalize=true when issue, location/building, and impacted area/floor are sufficiently clear, "
-            "or when turn_count reached max_turns. Prefer clarifying the issue details before asking for building/floor "
-            "when the caller statement is vague. "
-            "If pending_clarification is true, continue gathering clarification details first and avoid finalizing "
-            "until the ambiguity is clearly resolved."
+            "You are a friendly CBRE phone intake operator handling a live call. "
+            "Drive a natural, warm back-and-forth conversation, one focused question at a time, "
+            "to gather enough context before submitting a work order. "
+            "Speak like a human, not a form-filler: vary phrasing, acknowledge what the caller said, "
+            "and never repeat the same canned line. "
+            "\n\n"
+            "RULES:\n"
+            "- Ask at most ONE question per turn.\n"
+            "- Set should_finalize=true ONLY when you have a clear issue description AND a building AND a "
+            "floor/area (or when turn_count >= max_turns - 1).\n"
+            "- If the caller mentions a building name that does not exactly match the canonical list, "
+            "infer the closest match and return it as captured_building_name. Phone STT is imperfect, "
+            "so be tolerant of partial or fuzzy matches like 'west park' for 'Westpark Professional Center'.\n"
+            "- If you have already asked about the building 2 or more times and still are unsure, ACCEPT "
+            "the caller's best statement (use captured_building_name as their last building utterance) "
+            "and move on to the floor or finalize. Do not loop on the same slot.\n"
+            "- If pending_clarification is true, ask one short clarifying question targeted at the focus.\n"
+            "- Avoid robotic phrases like 'before I submit this, could you add one more detail'. "
+            "Use phrases like 'Got it' / 'Okay' / 'Thanks for that' to make the conversation feel natural.\n"
+            "- When you do have enough info, set should_finalize=true and put a brief acknowledgement in "
+            "agent_response (e.g. 'Got it — let me get someone dispatched right away.')."
         )
     )
     payload = {
@@ -57,6 +73,8 @@ def decide_next_step(
         "pending_clarification": pending_clarification,
         "clarification_focus": clarification_focus,
         "known_slots": intake_slots,
+        "building_ask_count": building_ask_count,
+        "canonical_building_names": known_building_names or [],
         "recent_conversation": _turns_to_text(turns),
     }
     user = HumanMessage(content=json.dumps(payload, indent=2))
