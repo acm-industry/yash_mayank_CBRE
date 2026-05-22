@@ -141,3 +141,54 @@ python evaluation/run_eval.py \
 # Overwrites predictions.json with 800 test-set rows (~32 min)
 ```
 
+### 6 — Live phone demo (Twilio + Deepgram + ElevenLabs)
+
+This repo now includes a minimal live voice intake server in `voice_demo/`.
+
+#### Install additional dependencies
+
+```bash
+pip install -r cbre_agent/requirements.txt
+```
+
+#### Configure environment
+
+```bash
+cp .env.example .env
+# Fill in OPENAI, TWILIO, DEEPGRAM, and ELEVENLABS keys.
+```
+
+#### Run locally
+
+```bash
+uvicorn voice_demo.server:app --reload --port 8000
+```
+
+#### Expose locally to Twilio
+
+Use a tunnel (for example ngrok):
+
+```bash
+ngrok http 8000
+```
+
+Set `PUBLIC_BASE_URL` in `.env` to the tunnel URL.
+
+In Twilio Console, set your phone number voice webhook to:
+
+`https://<your-tunnel-host>/voice/incoming` (HTTP POST)
+
+#### Demo mode (no Deepgram/ElevenLabs spend)
+
+```bash
+VOICE_DEMO_MODE=true uvicorn voice_demo.server:app --reload --port 8000
+```
+
+In demo mode, STT/TTS provider calls are skipped and a mock transcript is used;
+this is useful for local logic testing before running real calls.
+
+#### What gets saved
+
+- `demo_outputs/audio/` — generated ElevenLabs MP3 responses
+- `demo_outputs/workorders/` — per-call JSON artifacts including turns, prediction, and timing
+
